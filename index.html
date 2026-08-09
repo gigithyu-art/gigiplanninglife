@@ -1,0 +1,2520 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gigi的生活計劃</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #fff0f3 0%, #fde2e4 40%, #ffcad4 100%);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --pink-soft: #fff5f7;
+            --pink-accent: #f4acb7;
+            --pink-primary: #f0718f;
+            --pink-dark: #b54a62;
+            --pink-light-tag: #ffe3e8;
+            --text-main: #5c3a42;
+            --text-sub: #8c6870;
+            --shadow-soft: 0 10px 30px rgba(240, 113, 143, 0.15);
+            --border-glass: 1px solid rgba(255, 255, 255, 0.9);
+            --alert-red: #e53935;
+            --alert-bg: #ffebee;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            padding: 24px 16px;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .mac-app {
+            width: 100%;
+            max-width: 1280px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: var(--border-glass);
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mac-titlebar {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(240, 113, 143, 0.2);
+        }
+
+        .mac-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .dot-close { background: #ff605c; }
+        .dot-min { background: #ffbd2e; }
+        .dot-max { background: #00ca4e; }
+
+        .app-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--pink-dark);
+            letter-spacing: 0.5px;
+        }
+
+        .auth-status-btn {
+            font-size: 0.78rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 1px solid var(--pink-accent);
+            background: white;
+            color: var(--pink-dark);
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .app-body {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        @media (max-width: 960px) {
+            .app-body {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 18px 20px;
+            border: var(--border-glass);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            margin-bottom: 18px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--pink-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .points-card {
+            background: linear-gradient(135deg, #fff5f7 0%, #ffe3e8 100%);
+            border: 2px solid var(--pink-accent);
+            text-align: center;
+            padding: 16px;
+            border-radius: 18px;
+            margin-bottom: 18px;
+        }
+
+        .points-val {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--pink-primary);
+            margin: 4px 0;
+            text-shadow: 0 2px 4px rgba(240, 113, 143, 0.2);
+        }
+
+        .calendar-header {
+            font-weight: 700;
+            color: var(--pink-dark);
+            font-size: 0.95rem;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .cal-day-name {
+            font-weight: 600;
+            color: var(--text-sub);
+            padding: 4px 0;
+        }
+
+        .cal-date {
+            padding: 6px 0;
+            border-radius: 8px;
+            color: var(--text-main);
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .cal-date:hover { background: var(--pink-soft); }
+
+        .cal-date.today {
+            border: 2px solid var(--pink-primary);
+            font-weight: bold;
+        }
+
+        .cal-date.selected {
+            background: var(--pink-primary);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(240, 113, 143, 0.4);
+        }
+
+        .cal-date.has-task::after {
+            content: "•";
+            position: absolute;
+            bottom: 1px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--pink-dark);
+            font-size: 12px;
+        }
+
+        .cal-date.selected.has-task::after { color: white; }
+
+        .week-strip {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .week-day {
+            flex: 1;
+            background: var(--pink-soft);
+            border-radius: 10px;
+            padding: 8px 2px;
+            text-align: center;
+            font-size: 0.75rem;
+            border: 1px solid rgba(244, 172, 183, 0.3);
+            cursor: pointer;
+        }
+
+        .week-day.active {
+            background: var(--pink-light-tag);
+            border-color: var(--pink-primary);
+            font-weight: bold;
+            color: var(--pink-dark);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"], input[type="number"], input[type="password"], input[type="time"], select {
+            flex: 1;
+            min-width: 100px;
+            padding: 9px 12px;
+            border: 1.5px solid var(--pink-accent);
+            border-radius: 10px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-main);
+            font-size: 0.88rem;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--pink-primary);
+            box-shadow: 0 0 0 3px rgba(240, 113, 143, 0.2);
+        }
+
+        .btn-pink {
+            background: var(--pink-primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-pink:hover { background: var(--pink-dark); }
+
+        .btn-secondary {
+            background: white;
+            color: var(--pink-dark);
+            border: 1.5px solid var(--pink-accent);
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover { background: var(--pink-light-tag); }
+
+        .btn-danger {
+            background: #ffebee;
+            color: var(--alert-red);
+            border: 1px solid #ef9a9a;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-danger:hover {
+            background: var(--alert-red);
+            color: white;
+        }
+
+        .item-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--pink-soft);
+            padding: 9px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(244, 172, 183, 0.2);
+            transition: all 0.2s;
+        }
+
+        .item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .badge-tag {
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 8px;
+            background: var(--pink-light-tag);
+            color: var(--pink-dark);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-pts { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+        .badge-want { background: #fde2e4; color: var(--pink-primary); border: 1px solid var(--pink-accent); }
+
+        .item input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--pink-accent);
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .item input[type="checkbox"]:checked {
+            background-color: var(--pink-primary);
+            border-color: var(--pink-primary);
+        }
+
+        .item input[type="checkbox"]:checked::after {
+            content: "✓";
+            position: absolute;
+            color: white;
+            font-size: 12px;
+            top: -2px;
+            left: 3px;
+            font-weight: bold;
+        }
+
+        .item.completed span {
+            text-decoration: line-through;
+            color: #b598a0;
+        }
+
+        .btn-del {
+            background: none;
+            border: none;
+            color: #e57373;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.6;
+            margin-left: 8px;
+        }
+
+        .btn-del:hover { opacity: 1; }
+
+        .routine-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.88rem;
+        }
+
+        .gym-tracker {
+            background: #fff8f9;
+            border: 1.5px solid var(--pink-accent);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .gym-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--pink-dark);
+        }
+
+        .progress-bar-bg {
+            background: var(--pink-soft);
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(244, 172, 183, 0.4);
+        }
+
+        .progress-bar-fill {
+            background: var(--pink-primary);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .gym-btn-group {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .btn-gym {
+            flex: 1;
+            padding: 4px 0;
+            font-size: 0.78rem;
+            border: 1px solid var(--pink-accent);
+            background: white;
+            color: var(--pink-dark);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-gym:hover { background: var(--pink-light-tag); }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+        }
+
+        .med-notice {
+            background: #fff8f9;
+            border-left: 4px solid var(--pink-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            color: var(--pink-dark);
+            margin-bottom: 12px;
+        }
+
+        .finance-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .finance-box {
+            background: #fff8f9;
+            border-radius: 12px;
+            padding: 10px 12px;
+            border: 1px solid rgba(244, 172, 183, 0.3);
+            text-align: center;
+        }
+
+        .finance-title {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        .finance-amount {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--pink-dark);
+        }
+
+        .alert-box {
+            display: none;
+            background: var(--alert-bg);
+            border: 1px solid var(--alert-red);
+            color: var(--alert-red);
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .tutor-box {
+            background: #fff8f9;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 14px;
+            border: 1px solid var(--pink-accent);
+        }
+
+        .timetable-container {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .timetable {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 0.82rem;
+            min-width: 600px;
+        }
+
+        .timetable th, .timetable td {
+            border: 1px solid rgba(244, 172, 183, 0.4);
+            padding: 6px 4px;
+            vertical-align: middle;
+            height: 42px;
+        }
+
+        .timetable th {
+            background: var(--pink-soft);
+            color: var(--pink-dark);
+            font-weight: bold;
+        }
+
+        .time-col {
+            background: rgba(255, 255, 255, 0.6);
+            color: var(--text-sub);
+            font-size: 0.75rem;
+            width: 80px;
+            font-weight: 600;
+        }
+
+        .course-card {
+            background: var(--pink-light-tag);
+            color: var(--pink-dark);
+            border-radius: 8px;
+            padding: 6px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(240, 113, 143, 0.15);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .course-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(240, 113, 143, 0.3);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: var(--shadow-soft);
+            border: var(--border-glass);
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--pink-dark);
+            margin-bottom: 16px;
+        }
+
+        /* 📱 手機版優化 */
+        @media (max-width: 700px) {
+            body {
+                padding: 0;
+                display: block;
+                background: var(--bg-gradient);
+            }
+            .mac-app {
+                width: 100%;
+                max-width: none;
+                min-height: 100vh;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .mac-titlebar {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                padding: 12px 14px;
+                min-height: 54px;
+            }
+            .mac-dots { display: none; }
+            .app-title { font-size: 0.95rem; }
+            .app-body {
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+                padding: 10px;
+            }
+            .sidebar, .main-content { width: 100%; }
+            .card {
+                border-radius: 16px;
+                padding: 15px;
+                margin-bottom: 12px;
+            }
+            .card-header {
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .card-title { font-size: 1rem; }
+            .input-group {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .input-group > * {
+                width: 100% !important;
+                max-width: none !important;
+                min-width: 0 !important;
+            }
+            .input-group .btn-pink,
+            .input-group .btn-secondary {
+                width: 100%;
+            }
+            .finance-summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+            }
+            .finance-box { padding: 9px 6px; }
+            .finance-title { font-size: 0.7rem; }
+            .finance-amount { font-size: 0.95rem; }
+            .item {
+                align-items: flex-start;
+                gap: 8px;
+                padding: 10px;
+            }
+            .item-left {
+                min-width: 0;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .item-left > span:last-child {
+                overflow-wrap: anywhere;
+            }
+            .timetable-container { margin-left: -4px; margin-right: -4px; }
+            .timetable { min-width: 560px; }
+            .modal-card {
+                width: calc(100% - 24px);
+                max-height: 90vh;
+                overflow-y: auto;
+                padding: 18px;
+            }
+            #auth-btn, #edit-points-btn {
+                font-size: 0.72rem !important;
+                padding: 5px 8px !important;
+            }
+            .save-all-wrap {
+                position: sticky;
+                bottom: 0;
+                z-index: 40;
+                margin: 8px -10px -10px;
+                padding: 10px;
+                background: rgba(255,255,255,.9);
+                backdrop-filter: blur(12px);
+                border-top: 1px solid rgba(240,113,143,.2);
+            }
+            .save-all-btn {
+                width: 100%;
+                min-height: 50px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (min-width: 701px) and (max-width: 960px) {
+            .app-body { grid-template-columns: 1fr; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="mac-app">
+    <!-- Titlebar -->
+    <div class="mac-titlebar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="mac-dots">
+                <div class="dot dot-close"></div>
+                <div class="dot dot-min"></div>
+                <div class="dot dot-max"></div>
+            </div>
+            <div class="app-title">🌸 gigi的生活計劃</div>
+        </div>
+        <!-- 審核端功能區塊 -->
+        <div style="display: flex; gap: 8px;">
+            <button class="auth-status-btn" id="edit-points-btn" onclick="openEditPointsModal()" style="display: none; background: #fff3e0; border-color: #ffe0b2; color: #e65100;">🛠️ 稽核點數微調</button>
+            <button class="auth-status-btn" id="auth-btn" onclick="handleAuthBtnClick()">🔑 審核端登入</button>
+            <button class="auth-status-btn" id="change-password-btn" onclick="openChangePasswordModal()" style="display:none;">🔒 修改密碼</button>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+
+            <!-- 🌟 累積點數卡片 -->
+            <div class="points-card">
+                <div style="font-size:0.85rem; font-weight:bold; color:var(--pink-dark);">🌟 目前累積獎勵點數</div>
+                <div class="points-val" id="user-points-display">0.0</div>
+                <div style="font-size:0.72rem; color:var(--text-sub);">達成目標即可兌換願望禮物 🎁</div>
+            </div>
+
+            <!-- ⚡ 情緒管控 (未登入時預設隱藏) -->
+            <div class="card" id="anger-card" style="border: 1.5px solid #ef9a9a; background: #fff8f8; display: none;">
+                <div class="card-title" style="color: var(--alert-red); font-size: 0.95rem;">⚡ 情緒稽核登記</div>
+                <div style="font-size: 0.75rem; color: var(--text-sub); margin: 6px 0 10px 0;">生氣將進行點數懲扣 (已通過審核)</div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-danger" style="flex:1;" onclick="triggerAngerRecord(1.0, '小發雷霆')">😤 小發雷霆 (-1.0)</button>
+                    <button class="btn-danger" style="flex:1;" onclick="triggerAngerRecord(2.0, '大發雷霆')">💥 大發雷霆 (-2.0)</button>
+                </div>
+            </div>
+            
+            <!-- 月曆 Calendar Widget -->
+            <div class="card">
+                <div class="calendar-header" id="month-title">2026 年 8 月</div>
+                <div class="cal-grid">
+                    <div class="cal-day-name">日</div>
+                    <div class="cal-day-name">一</div>
+                    <div class="cal-day-name">二</div>
+                    <div class="cal-day-name">三</div>
+                    <div class="cal-day-name">四</div>
+                    <div class="cal-day-name">五</div>
+                    <div class="cal-day-name">六</div>
+                </div>
+                <div class="cal-grid" id="cal-dates"></div>
+            </div>
+
+            <!-- 週曆 Weekly View Widget -->
+            <div class="card">
+                <div class="card-title">🗓 本週總覽</div>
+                <div class="week-strip" id="week-strip"></div>
+            </div>
+
+            <!-- 作息與水份紀錄 (修改時間需要密碼權限) -->
+            <div class="card">
+                <div class="card-title">🌙 作息 & 水份獎勵 🔐</div>
+                <div style="font-size: 0.72rem; color: var(--text-sub); margin-bottom: 8px;">
+                    ⏰ 09:00前+0.5 | 10:00前+0.2 (自動計算/防刷點)<br>
+                    😴 24:00前+0.5 | 01:00前+0.2
+                </div>
+                <div class="routine-item">
+                    <label>☀️ 起床時間</label>
+                    <input type="time" id="wake-time" value="08:30" style="max-width: 110px;" onfocus="storeOldTime(this)" onchange="evaluateWakeTime(this)">
+                </div>
+                <div class="routine-item">
+                    <label>🌙 預計就寢</label>
+                    <input type="time" id="sleep-time" value="23:30" style="max-width: 110px;" onfocus="storeOldTime(this)" onchange="evaluateSleepTime(this)">
+                </div>
+                <div class="routine-item">
+                    <label>💧 每日喝水</label>
+                    <select id="water-intake" style="max-width: 110px;" onchange="saveHabits()">
+                        <option>1000 ml</option>
+                        <option selected>1500 ml</option>
+                        <option>2000 ml</option>
+                        <option>2500+ ml</option>
+                    </select>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+
+            <!-- 今日截止作業提醒 -->
+            <div class="alert-box" id="today-due-alert">
+                <div style="font-weight: bold; margin-bottom: 6px; font-size: 0.95rem;">🚨 今日截止提醒！請檢核是否已完成：</div>
+                <ul id="today-due-list" style="margin-left: 20px; font-weight: normal; font-size: 0.88rem;"></ul>
+            </div>
+
+            <!-- 🎁 願望清單與點數兌換 -->
+            <div class="card" style="border: 2px solid var(--pink-accent);">
+                <div class="card-header">
+                    <div class="card-title">🎁 願望清單 (點數兌換連動記帳)</div>
+                    <span style="font-size:0.78rem; color:var(--text-sub);">🔐 兌換時需驗證登入</span>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="wish-name" placeholder="想兌換的禮物 / 願望 (如: 專櫃口紅, 約會餐廳)...">
+                    <input type="number" id="wish-price" placeholder="價格 $" style="max-width: 110px;" oninput="updateWishPtsPreview()">
+                    <span id="wish-pts-preview" class="badge-tag badge-pts" style="align-self:center; display:none;">需要 0 點</span>
+                    <button class="btn-pink" onclick="addWishlistItem()">＋ 加入許願池</button>
+                </div>
+
+                <ul class="item-list" id="wishlist-container"></ul>
+            </div>
+
+            <!-- 📅 點選日期的預計截止作業 / 計劃管理 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title" id="date-planner-title">📅 預計截止作業與計劃</div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="date-task-input" placeholder="新增預計在此日期截止的作業或計劃...">
+                    <select id="date-task-diff" style="max-width: 130px;">
+                        <option value="0.2">簡單 (+0.2點)</option>
+                        <option value="0.5" selected>普通 (+0.5點)</option>
+                        <option value="1.0">困難 (+1.0點)</option>
+                    </select>
+                    <button class="btn-pink" onclick="addDateTask()">新增至此日期</button>
+                </div>
+                <ul class="item-list" id="date-task-list"></ul>
+            </div>
+
+            <!-- 💰 記帳與預算管理系統 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">💰 理財記帳與預算管理 (新增「想要」將自動扣點)</div>
+                </div>
+
+                <div class="finance-summary">
+                    <div class="finance-box">
+                        <div class="finance-title">固定預設月收入</div>
+                        <div class="finance-amount">$18,600</div>
+                        <div style="font-size: 0.68rem; color: var(--text-sub); margin-top:2px;">(生活費15k + 租補3.6k)</div>
+                    </div>
+                    <div class="finance-box">
+                        <div class="finance-title">本月累積總收入</div>
+                        <div class="finance-amount" id="total-income-txt">$18,600</div>
+                    </div>
+                    <div class="finance-box">
+                        <div class="finance-title">本週「想要」可用額度</div>
+                        <div class="finance-amount" id="want-limit-txt">$2,000</div>
+                    </div>
+                    <div class="finance-box">
+                        <div class="finance-title">本週「想要」已消費</div>
+                        <div class="finance-amount" id="want-spent-txt" style="color:var(--pink-primary);">$0</div>
+                    </div>
+                </div>
+
+                <div class="alert-box" id="want-alert">
+                    ⚠️ <b>警告：</b>本週「想要」消費已超過預算！超出部分將從下週「想要」額度中扣除。
+                </div>
+
+                <div class="tutor-box">
+                    <div style="font-size: 0.88rem; font-weight: bold; color: var(--pink-dark); margin-bottom: 8px;">
+                        👩‍🏫 家教時薪計數器 ($1,200 / hr)
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <select id="tutor-hours">
+                            <option value="1">今天上了 1 小時 (+$1,200)</option>
+                            <option value="1.5">今天上了 1.5 小時 (+$1,800)</option>
+                            <option value="2" selected>今天上了 2 小時 (+$2,400)</option>
+                            <option value="2.5">今天上了 2.5 小時 (+$3,000)</option>
+                            <option value="3">今天上了 3 小時 (+$3,600)</option>
+                        </select>
+                        <button class="btn-pink" onclick="addTutorIncome()">＋ 計入收入</button>
+                    </div>
+                </div>
+
+                <!-- 其他收入 -->
+                <div class="tutor-box" style="margin-top: 10px;">
+                    <div style="font-size: 0.88rem; font-weight: bold; color: var(--pink-dark); margin-bottom: 8px;">
+                        💵 其他收入
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <input type="text" id="other-income-name" placeholder="收入項目（例如：獎學金、紅包、兼職）">
+                        <input type="number" id="other-income-amount" placeholder="金額 $" min="0" step="1">
+                        <button class="btn-pink" onclick="addOtherIncome()">＋ 計入收入</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="expense-name" placeholder="消費項目 (例如: 珍珠奶茶, 甜點)...">
+                    <input type="number" id="expense-amount" placeholder="金額 $" style="max-width: 100px;">
+                    <select id="expense-type" style="max-width: 110px;">
+                        <option value="Need">需要 (Need)</option>
+                        <option value="Want" selected>想要 (Want)</option>
+                    </select>
+                    <button class="btn-pink" onclick="addExpense()">新增支出</button>
+                </div>
+
+                <ul class="item-list" id="finance-list"></ul>
+            </div>
+
+            <!-- 吃藥提醒 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">💊 吃藥提醒 (全天完成獎勵 +0.5點)</div>
+                </div>
+                <div class="med-notice">
+                    ✨ 溫馨叮嚀：三餐飯後記得服用<b>「永康緒」</b>，睡前記得服用<b>「憂解」</b>喔！
+                </div>
+                <ul class="item-list" id="med-list">
+                    <li class="item" data-id="med-1">
+                        <div class="item-left">
+                            <input type="checkbox" onchange="checkMedicationCompletion(this)">
+                            <span class="badge-tag">早餐後</span>
+                            <span>永康緒 1 錠</span>
+                        </div>
+                    </li>
+                    <li class="item" data-id="med-2">
+                        <div class="item-left">
+                            <input type="checkbox" onchange="checkMedicationCompletion(this)">
+                            <span class="badge-tag">午餐後</span>
+                            <span>永康緒 1 錠</span>
+                        </div>
+                    </li>
+                    <li class="item" data-id="med-3">
+                        <div class="item-left">
+                            <input type="checkbox" onchange="checkMedicationCompletion(this)">
+                            <span class="badge-tag">晚餐後</span>
+                            <span>永康緒 1 錠</span>
+                        </div>
+                    </li>
+                    <li class="item" data-id="med-4">
+                        <div class="item-left">
+                            <input type="checkbox" onchange="checkMedicationCompletion(this)">
+                            <span class="badge-tag" style="background:#f4acb7; color:white;">睡前</span>
+                            <span>憂解 1 錠</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 2 Columns: 讀書 & 運動 -->
+            <div class="main-grid">
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📖 讀書計劃</div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="study-input" placeholder="新增科目 / 章節...">
+                        <select id="study-diff" style="max-width: 110px;">
+                            <option value="0.2">簡單(+0.2)</option>
+                            <option value="0.5" selected>普通(+0.5)</option>
+                            <option value="1.0">困難(+1.0)</option>
+                        </select>
+                        <button class="btn-pink" onclick="addCustomTask('study-input', 'study-list', 'study-diff', '讀書')">新增</button>
+                    </div>
+                    <ul class="item-list" id="study-list"></ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">🏃‍♀️ 運動計劃</div>
+                    </div>
+
+                    <div class="gym-tracker">
+                        <div class="gym-header">
+                            <span>🏋️‍♀️ 健身房 1 小時 (每週達標 3 次 +2.0點)</span>
+                            <span id="gym-count-text">0 / 3 次</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="gym-progress"></div>
+                        </div>
+                        <div class="gym-btn-group">
+                            <button class="btn-gym" onclick="updateGymCount(1)">+ 打卡一次</button>
+                            <button class="btn-gym" onclick="updateGymCount(-1)">- 減少一次</button>
+                            <button class="btn-gym" onclick="resetGymCount()">重置</button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="sport-input" placeholder="新增其他運動...">
+                        <select id="sport-diff" style="max-width: 110px;">
+                            <option value="0.2">簡單(+0.2)</option>
+                            <option value="0.5" selected>普通(+0.5)</option>
+                            <option value="1.0">困難(+1.0)</option>
+                        </select>
+                        <button class="btn-pink" onclick="addCustomTask('sport-input', 'sport-list', 'sport-diff', '運動')">新增</button>
+                    </div>
+
+                    <ul class="item-list" id="sport-list">
+                        <li class="item" data-id="sport-core" data-pts="0.2">
+                            <div class="item-left">
+                                <input type="checkbox" onchange="togglePointTask(this, 0.2)">
+                                <span class="badge-tag" style="background:#f4acb7; color:white;">睡前</span>
+                                <span class="badge-tag badge-pts">+0.2點</span>
+                                <span>練核心 10 分鐘</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- 🏫 大學課表系統 -->
+            <div class="card" style="margin-top: 10px;">
+                <div class="card-header">
+                    <div class="card-title">🏫 大學課表 (Schedule)</div>
+                    <div>
+                        <button class="btn-secondary" onclick="resetDefaultSchedule()">重置為預設課表</button>
+                        <button class="btn-pink" onclick="openCourseModal()">＋ 新增/編輯課程</button>
+                    </div>
+                </div>
+
+                <div class="timetable-container">
+                    <table class="timetable">
+                        <thead>
+                            <tr>
+                                <th class="time-col">節次 / 時間</th>
+                                <th>週一</th>
+                                <th>週二</th>
+                                <th>週三</th>
+                                <th>週四</th>
+                                <th>週五</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timetable-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 💾 全頁儲存 -->
+    <div class="save-all-wrap" style="padding: 12px 20px 18px;">
+        <button class="btn-pink save-all-btn" onclick="saveEverything()">💾 儲存全部變更</button>
+        <div id="save-status" style="text-align:center; font-size:.72rem; color:var(--text-sub); margin-top:6px;">
+            尚未手動儲存
+        </div>
+        <div style="font-size:.7rem;color:var(--text-sub);text-align:center;margin-top:2px;">
+            📱 手機版已優化；按「儲存全部變更」後會同步到 Supabase，不同手機重新整理即可讀取。
+        </div>
+    </div>
+</div>
+
+<!-- 🔐 稽核端直接編輯點數 Modal -->
+<div class="modal-overlay" id="edit-points-modal">
+    <div class="modal-card">
+        <div class="modal-title">🛠️ 稽核點數直接微調</div>
+        <div style="font-size:0.85rem; color:var(--text-sub); margin-bottom: 12px;">
+            目前累積點數：<b id="audit-curr-points" style="color:var(--pink-primary); font-size:1.1rem;">0.0</b> 點
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+            <div>
+                <label style="font-size:0.8rem; color:var(--text-sub);">調整模式</label>
+                <select id="edit-pts-action" style="width:100%; margin-top:4px;">
+                    <option value="ADD">➕ 增加點數</option>
+                    <option value="DEDUCT">➖ 扣除點數</option>
+                    <option value="SET" selected>🎯 直接設定為新數值</option>
+                </select>
+            </div>
+
+            <div>
+                <label style="font-size:0.8rem; color:var(--text-sub);">數值</label>
+                <input type="number" id="edit-pts-amount" step="0.1" placeholder="請輸入點數數值" style="width:100%; margin-top:4px;">
+            </div>
+
+            <div>
+                <label style="font-size:0.8rem; color:var(--text-sub);">稽核備註 / 變更原因</label>
+                <input type="text" id="edit-pts-reason" placeholder="例：系統誤扣點數補回、人工稽核核算" style="width:100%; margin-top:4px;">
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn-secondary" onclick="closeEditPointsModal()">取消</button>
+            <button class="btn-pink" onclick="submitEditPoints()">儲存變更</button>
+        </div>
+    </div>
+</div>
+
+<!-- 密碼登入審核 Modal -->
+<div class="modal-overlay" id="auth-modal">
+    <div class="modal-card">
+        <div class="modal-title">🔐 審核端專屬驗證</div>
+        <div style="font-size:0.85rem; color:var(--text-sub); margin-bottom: 12px;">
+            請輸入管理密碼驗證身份。
+        </div>
+        <input type="password" id="auth-password-input" placeholder="請輸入密碼..." style="width:100%; margin-bottom:12px;" onkeypress="if(event.key==='Enter') verifyAugPassword()">
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn-secondary" onclick="closeAuthModal()">取消</button>
+            <button class="btn-pink" onclick="verifyAugPassword()">驗證登入</button>
+        </div>
+    </div>
+</div>
+
+<!-- 修改密碼 Modal -->
+<div class="modal-overlay" id="change-password-modal">
+    <div class="modal-card">
+        <div class="modal-title">🔒 修改管理密碼</div>
+        <div style="font-size:0.82rem; color:var(--text-sub); margin-bottom:12px;">
+            修改後的新密碼會在「儲存」時一併保存。
+        </div>
+        <input type="password" id="current-password-input" placeholder="目前密碼" style="width:100%; margin-bottom:8px;">
+        <input type="password" id="new-password-input" placeholder="新密碼（至少 4 碼）" style="width:100%; margin-bottom:8px;">
+        <input type="password" id="confirm-password-input" placeholder="再次輸入新密碼" style="width:100%; margin-bottom:14px;">
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn-secondary" onclick="closeChangePasswordModal()">取消</button>
+            <button class="btn-pink" onclick="changeAugPassword()">更新密碼</button>
+        </div>
+    </div>
+</div>
+
+<!-- 課程 Modal -->
+<div class="modal-overlay" id="course-modal">
+    <div class="modal-card">
+        <div class="modal-title" id="modal-title-txt">🌸 手動新增 / 編輯課程</div>
+        
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+                <label style="font-size:0.8rem; color:var(--text-sub);">課程名稱</label>
+                <input type="text" id="modal-c-name" placeholder="例如: 組織學" style="width:100%; margin-top:4px;">
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <div style="flex:1;">
+                    <label style="font-size:0.8rem; color:var(--text-sub);">星期</label>
+                    <select id="modal-c-day" style="width:100%; margin-top:4px;">
+                        <option value="1">週一</option>
+                        <option value="2">週二</option>
+                        <option value="3">週三</option>
+                        <option value="4">週四</option>
+                        <option value="5">週五</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <div style="flex:1;">
+                    <label style="font-size:0.8rem; color:var(--text-sub);">開始節次</label>
+                    <select id="modal-c-start" style="width:100%; margin-top:4px;"></select>
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:0.8rem; color:var(--text-sub);">結束節次</label>
+                    <select id="modal-c-end" style="width:100%; margin-top:4px;"></select>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:16px;">
+                <button class="btn-secondary" onclick="closeCourseModal()">取消</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-secondary" id="btn-delete-course" style="color:var(--alert-red); display:none;" onclick="deleteCurrentCourse()">刪除此課</button>
+                    <button class="btn-pink" onclick="saveCourseFromModal()">保存課程</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    // ☁️ Supabase 雲端同步設定
+    // 只使用前端可公開的 Publishable Key；不要把 sb_secret_... 放進網站。
+    const SUPABASE_URL = 'https://xvlapoanyzjygsnooslq.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_wl8TcL0brozrBMfgwYk5NA_LjU0Qhwv';
+    const SUPABASE_ROW_ID = 'gigi-main';
+
+    const CLOUD_SYNC_KEYS = [
+        'gigi_planner_points',
+        'gigi_planner_med_bonus',
+        'gigi_planner_gym_bonus',
+        'gigi_planner_prev_wake_pts',
+        'gigi_planner_prev_sleep_pts',
+        'gigi_planner_wishlist',
+        'gigi_planner_date_tasks',
+        'neo_pink_planner_data',
+        'neo_pink_planner_habits',
+        'neo_pink_planner_finance',
+        'neo_pink_planner_schedule',
+        'gigi_planner_password'
+    ];
+
+    async function loadCloudData() {
+        try {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/gigi_planner_data?id=eq.${encodeURIComponent(SUPABASE_ROW_ID)}&select=data,updated_at`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_PUBLISHABLE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+                    }
+                }
+            );
+
+            if (!res.ok) throw new Error(`Cloud read failed: ${res.status}`);
+            const rows = await res.json();
+
+            if (rows.length && rows[0].data) {
+                const cloudData = rows[0].data;
+                Object.entries(cloudData).forEach(([key, value]) => {
+                    if (CLOUD_SYNC_KEYS.includes(key)) {
+                        localStorage.setItem(key, String(value));
+                    }
+                });
+
+                console.log('☁️ 已從 Supabase 載入最新資料', rows[0].updated_at);
+                return true;
+            }
+
+            console.log('☁️ Supabase 尚無資料，保留此裝置目前資料');
+            return false;
+        } catch (err) {
+            console.error('☁️ 雲端讀取失敗：', err);
+            return false;
+        }
+    }
+
+    async function saveCloudData() {
+        const data = {};
+
+        CLOUD_SYNC_KEYS.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) data[key] = value;
+        });
+
+        const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/gigi_planner_data?on_conflict=id`,
+            {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_PUBLISHABLE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'resolution=merge-duplicates,return=minimal'
+                },
+                body: JSON.stringify({
+                    id: SUPABASE_ROW_ID,
+                    data: data,
+                    updated_at: new Date().toISOString()
+                })
+            }
+        );
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(`Cloud save failed: ${res.status} ${errorText}`);
+        }
+
+        return true;
+    }
+
+    let AUG_PASSWORD = localStorage.getItem('gigi_planner_password') || "aug123";
+    let isAugLoggedIn = false;
+    let pendingAction = null;
+    let tempOldValue = "";
+
+    const todayObj = new Date();
+    const todayStr = formatDateStr(todayObj.getFullYear(), todayObj.getMonth() + 1, todayObj.getDate());
+    let selectedDateStr = todayStr;
+
+    let totalPoints = 0.0;
+    let medBonusAwardedToday = false;
+    let gymBonusAwardedThisWeek = false;
+
+    let prevWakePts = 0.0;
+    let prevSleepPts = 0.0;
+
+    let wishlist = [];
+    let dateTasks = {};
+
+    const periods = [
+        { id: 1, label: '1 節', time: '08:10 - 09:00' },
+        { id: 2, label: '2 節', time: '09:10 - 10:00' },
+        { id: 3, label: '3 節', time: '10:20 - 11:10' },
+        { id: 4, label: '4 節', time: '11:20 - 12:10' },
+        { id: 5, label: '5 節', time: '12:20 - 13:10' },
+        { id: 6, label: '6 節', time: '13:20 - 14:10' },
+        { id: 7, label: '7 節', time: '14:20 - 15:10' },
+        { id: 8, label: '8 節', time: '15:30 - 16:20' },
+        { id: 9, label: '9 節', time: '16:30 - 17:20' }
+    ];
+
+    const defaultCourses = [
+        { id: 'c1', name: '組織學', day: 1, start: 1, end: 4, color: '#f8bbd0' },
+        { id: 'c2', name: '生理學', day: 1, start: 6, end: 9, color: '#e1bee7' },
+        { id: 'c3', name: '大體解剖', day: 2, start: 1, end: 4, color: '#bbdefb' },
+        { id: 'c4', name: '胚胎學', day: 2, start: 6, end: 7, color: '#c8e6c9' },
+        { id: 'c5', name: '大體解剖', day: 2, start: 8, end: 9, color: '#bbdefb' },
+        { id: 'c6', name: '牙科器材學', day: 3, start: 2, end: 2, color: '#ffe0b2' },
+        { id: 'c7', name: '牙體復形學', day: 3, start: 3, end: 3, color: '#ffcc80' },
+        { id: 'c8', name: '牙體復形學實驗', day: 3, start: 4, end: 4, color: '#ffb74d' },
+        { id: 'c9', name: '大體解剖學', day: 3, start: 6, end: 7, color: '#bbdefb' },
+        { id: 'c10', name: '組織學', day: 3, start: 8, end: 9, color: '#f8bbd0' },
+        { id: 'c11', name: '口腔解剖學', day: 5, start: 1, end: 1, color: '#d1c4e9' },
+        { id: 'c12', name: '醫師與人文', day: 5, start: 3, end: 4, color: '#b2dfdb' },
+        { id: 'c13', name: '口腔胚胎及組織學', day: 5, start: 5, end: 8, color: '#f48fb1' }
+    ];
+
+    let courses = [];
+    let editingCourseId = null;
+
+    let gymCount = 0;
+    let baseIncome = 18600;
+    let tutorIncomeTotal = 0;
+    let otherIncomeTotal = 0;
+    let financeItems = [];
+    const BASE_WEEKLY_WANT_LIMIT = 2000;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 先抓 Supabase，再把資料灌回原本的 localStorage 載入流程
+        await loadCloudData();
+
+        loadSavedData();
+        renderCalendar();
+        renderWeekStrip();
+        renderDateTasks();
+        checkTodayDueAlert();
+        renderPointsUI();
+        renderWishlist();
+        initModalSelectors();
+        loadSchedule();
+        recalculateFinance();
+        updateAuthBtnUI();
+    });
+
+    function formatDateStr(year, month, day) {
+        const m = month < 10 ? '0' + month : month;
+        const d = day < 10 ? '0' + day : day;
+        return `${year}-${m}-${d}`;
+    }
+
+    /* 🌅 作息時間變更與自動試算核發機制 */
+    function storeOldTime(inputEl) {
+        tempOldValue = inputEl.value;
+    }
+
+    function evaluateWakeTime(inputEl) {
+        runWithAuth(() => {
+            processWakeTimeLogic();
+        }, () => {
+            inputEl.value = tempOldValue;
+        });
+    }
+
+    function processWakeTimeLogic() {
+        const wakeVal = document.getElementById('wake-time').value;
+        if (!wakeVal) return;
+
+        const [hrs, mins] = wakeVal.split(':').map(Number);
+        const totalMins = hrs * 60 + mins;
+
+        let currentPts = 0.0;
+
+        // 判定門檻：09:00 前 +0.5, 10:00 前 +0.2
+        if (totalMins <= 9 * 60) {
+            currentPts = 0.5;
+        } else if (totalMins <= 10 * 60) {
+            currentPts = 0.2;
+        } else {
+            currentPts = 0.0;
+        }
+
+        const diff = parseFloat((currentPts - prevWakePts).toFixed(1));
+        if (diff !== 0) {
+            if (diff > 0) {
+                addPoints(diff);
+                if (currentPts === 0.5) alert(`☀️ 早起達人！早上 09:00 前起床（時間：${wakeVal}），核發 +${diff} 點獎勵！`);
+                else if (currentPts === 0.2) alert(`⛅ 表現不錯！早上 10:00 前起床（時間：${wakeVal}），核發 +${diff} 點獎勵！`);
+            } else {
+                deductPoints(Math.abs(diff));
+                alert(`⚠️ 起床時間延後至 ${wakeVal}，已自動調降/補回 ${Math.abs(diff)} 點！`);
+            }
+        }
+
+        prevWakePts = currentPts;
+        saveHabits();
+    }
+
+    function evaluateSleepTime(inputEl) {
+        runWithAuth(() => {
+            processSleepTimeLogic();
+        }, () => {
+            inputEl.value = tempOldValue;
+        });
+    }
+
+    function processSleepTimeLogic() {
+        const sleepVal = document.getElementById('sleep-time').value;
+        if (!sleepVal) return;
+
+        const [hrs, mins] = sleepVal.split(':').map(Number);
+        const totalMins = hrs * 60 + mins;
+
+        let currentPts = 0.0;
+
+        // 判定門檻：24:00 (00:00) 前 +0.5, 01:00 前 +0.2
+        if (totalMins <= 24 * 60 && totalMins >= 12 * 60) { 
+            currentPts = 0.5;
+        } else if (totalMins <= 1 * 60 || totalMins > 24 * 60) { 
+            currentPts = 0.2;
+        } else {
+            currentPts = 0.0;
+        }
+
+        const diff = parseFloat((currentPts - prevSleepPts).toFixed(1));
+        if (diff !== 0) {
+            if (diff > 0) {
+                addPoints(diff);
+                if (currentPts === 0.5) alert(`🌙 睡眠達人！晚上 24:00 前就寢（時間：${sleepVal}），核發 +${diff} 點獎勵！`);
+                else if (currentPts === 0.2) alert(`🌌 準時就寢！凌晨 01:00 前就寢（時間：${sleepVal}），核發 +${diff} 點獎勵！`);
+            } else {
+                deductPoints(Math.abs(diff));
+                alert(`⚠️ 就寢時間延後至 ${sleepVal}，已自動調降/補回 ${Math.abs(diff)} 點！`);
+            }
+        }
+
+        prevSleepPts = currentPts;
+        saveHabits();
+    }
+
+    /* 🛠️ 稽核端直接微調點數邏輯 */
+    function openEditPointsModal() {
+        if (!isAugLoggedIn) {
+            openAuthModal();
+            return;
+        }
+        document.getElementById('audit-curr-points').innerText = totalPoints.toFixed(1);
+        document.getElementById('edit-pts-amount').value = '';
+        document.getElementById('edit-pts-reason').value = '';
+        document.getElementById('edit-points-modal').style.display = 'flex';
+    }
+
+    function closeEditPointsModal() {
+        document.getElementById('edit-points-modal').style.display = 'none';
+    }
+
+    function submitEditPoints() {
+        const action = document.getElementById('edit-pts-action').value;
+        const amountVal = parseFloat(document.getElementById('edit-pts-amount').value);
+        const reason = document.getElementById('edit-pts-reason').value.trim();
+
+        if (isNaN(amountVal) || amountVal < 0) {
+            alert('請輸入有效的非負數值！');
+            return;
+        }
+
+        const oldPoints = totalPoints;
+
+        if (action === 'ADD') {
+            totalPoints = parseFloat((totalPoints + amountVal).toFixed(1));
+        } else if (action === 'DEDUCT') {
+            totalPoints = parseFloat((Math.max(0, totalPoints - amountVal)).toFixed(1));
+        } else if (action === 'SET') {
+            totalPoints = parseFloat(amountVal.toFixed(1));
+        }
+
+        renderPointsUI();
+        savePointsData();
+        closeEditPointsModal();
+
+        alert(`✅ 點數已成功更新！\n調整前：${oldPoints.toFixed(1)} 點\n調整後：${totalPoints.toFixed(1)} 點${reason ? `\n備註原因：${reason}` : ''}`);
+    }
+
+    /* 🔐 權限與登入控制 */
+    function handleAuthBtnClick() {
+        if (isAugLoggedIn) {
+            if (confirm("是否要登出審核權限？")) {
+                isAugLoggedIn = false;
+                updateAuthBtnUI();
+                alert("已登出審核權限。");
+            }
+        } else {
+            openAuthModal();
+        }
+    }
+
+    function runWithAuth(actionCallback, cancelCallback = null) {
+        if (isAugLoggedIn) {
+            actionCallback();
+        } else {
+            pendingAction = {
+                confirm: actionCallback,
+                cancel: cancelCallback
+            };
+            openAuthModal();
+        }
+    }
+
+    function openAuthModal() {
+        document.getElementById('auth-password-input').value = '';
+        document.getElementById('auth-modal').style.display = 'flex';
+    }
+
+    function closeAuthModal() {
+        document.getElementById('auth-modal').style.display = 'none';
+        if (pendingAction && pendingAction.cancel) {
+            pendingAction.cancel();
+        }
+        pendingAction = null;
+    }
+
+    function verifyAugPassword() {
+        const pwd = document.getElementById('auth-password-input').value;
+        if (pwd === AUG_PASSWORD) {
+            isAugLoggedIn = true;
+            updateAuthBtnUI();
+            document.getElementById('auth-modal').style.display = 'none';
+            alert('🔓 驗證登入成功！');
+
+            if (pendingAction && pendingAction.confirm) {
+                const actionToRun = pendingAction.confirm;
+                pendingAction = null;
+                actionToRun();
+            }
+        } else {
+            alert('❌ 密碼錯誤！請重新輸入。');
+        }
+    }
+
+
+    function openChangePasswordModal() {
+        if (!isAugLoggedIn) {
+            openAuthModal();
+            return;
+        }
+        document.getElementById('current-password-input').value = '';
+        document.getElementById('new-password-input').value = '';
+        document.getElementById('confirm-password-input').value = '';
+        document.getElementById('change-password-modal').style.display = 'flex';
+    }
+
+    function closeChangePasswordModal() {
+        document.getElementById('change-password-modal').style.display = 'none';
+    }
+
+    function changeAugPassword() {
+        const current = document.getElementById('current-password-input').value;
+        const next = document.getElementById('new-password-input').value;
+        const confirmNext = document.getElementById('confirm-password-input').value;
+
+        if (current !== AUG_PASSWORD) {
+            alert('❌ 目前密碼不正確。');
+            return;
+        }
+        if (next.length < 4) {
+            alert('❌ 新密碼至少需要 4 碼。');
+            return;
+        }
+        if (next !== confirmNext) {
+            alert('❌ 兩次輸入的新密碼不一致。');
+            return;
+        }
+
+        AUG_PASSWORD = next;
+        localStorage.setItem('gigi_planner_password', AUG_PASSWORD);
+        closeChangePasswordModal();
+        alert('✅ 密碼已更新。請記得按頁面最下方「儲存全部變更」。');
+    }
+
+    function updateAuthBtnUI() {
+        const btn = document.getElementById('auth-btn');
+        const editPtsBtn = document.getElementById('edit-points-btn');
+        const angerCard = document.getElementById('anger-card');
+        const changePasswordBtn = document.getElementById('change-password-btn');
+
+        if (isAugLoggedIn) {
+            btn.innerText = '✅ 已驗證 (點擊登出)';
+            btn.style.background = '#c8e6c9';
+            btn.style.color = '#2e7d32';
+            editPtsBtn.style.display = 'inline-block';
+            angerCard.style.display = 'block';
+            changePasswordBtn.style.display = 'inline-block';
+        } else {
+            btn.innerText = '🔑 審核端登入';
+            btn.style.background = 'white';
+            btn.style.color = 'var(--pink-dark)';
+            editPtsBtn.style.display = 'none';
+            angerCard.style.display = 'none';
+            changePasswordBtn.style.display = 'none';
+        }
+    }
+
+    /* ⚡ 生氣情緒扣點系統 */
+    function triggerAngerRecord(deductPts, title) {
+        if (confirm(`【審核確認】確定要登錄「${title}」並扣除 ${deductPts} 點嗎？`)) {
+            deductPoints(deductPts);
+            alert(`⚠️ 已完成登錄：${title}，已扣除 ${deductPts} 點！💪`);
+        }
+    }
+
+    /* 🌟 點數管理系統 */
+    function addPoints(pts) {
+        totalPoints = parseFloat((totalPoints + pts).toFixed(1));
+        renderPointsUI();
+        savePointsData();
+    }
+
+    function deductPoints(pts) {
+        totalPoints = parseFloat((totalPoints - pts).toFixed(1));
+        renderPointsUI();
+        savePointsData();
+    }
+
+    function renderPointsUI() {
+        document.getElementById('user-points-display').innerText = totalPoints.toFixed(1);
+    }
+
+    function savePointsData() {
+        localStorage.setItem('gigi_planner_points', totalPoints);
+        localStorage.setItem('gigi_planner_med_bonus', medBonusAwardedToday);
+        localStorage.setItem('gigi_planner_gym_bonus', gymBonusAwardedThisWeek);
+        localStorage.setItem('gigi_planner_prev_wake_pts', prevWakePts);
+        localStorage.setItem('gigi_planner_prev_sleep_pts', prevSleepPts);
+    }
+
+    /* 🎁 願望清單 Wishlist Manager */
+    function updateWishPtsPreview() {
+        const price = parseFloat(document.getElementById('wish-price').value);
+        const preview = document.getElementById('wish-pts-preview');
+        if (!isNaN(price) && price > 0) {
+            const reqPts = (price / 100).toFixed(1);
+            preview.innerText = `需要 ${reqPts} 點`;
+            preview.style.display = 'inline-block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    function addWishlistItem() {
+        const nameInput = document.getElementById('wish-name');
+        const priceInput = document.getElementById('wish-price');
+
+        const name = nameInput.value.trim();
+        const price = parseFloat(priceInput.value);
+
+        if (!name || isNaN(price) || price <= 0) {
+            alert('請輸入有效的願望名稱與金額！');
+            return;
+        }
+
+        const reqPoints = parseFloat((price / 100).toFixed(1));
+
+        wishlist.push({
+            id: 'wish-' + Date.now(),
+            name: name,
+            price: price,
+            reqPoints: reqPoints,
+            redeemed: false
+        });
+
+        nameInput.value = '';
+        priceInput.value = '';
+        document.getElementById('wish-pts-preview').style.display = 'none';
+
+        saveWishlistData();
+        renderWishlist();
+    }
+
+    function redeemWishItem(id) {
+        const item = wishlist.find(w => w.id === id);
+        if (!item) return;
+
+        if (totalPoints < item.reqPoints) {
+            alert(`點數還不夠喔！還差 ${(item.reqPoints - totalPoints).toFixed(1)} 點，繼續加油！✨`);
+            return;
+        }
+
+        runWithAuth(() => {
+            if (confirm(`【兌換核准】確定要消耗 ${item.reqPoints} 點兌換「${item.name}」嗎？\n(系統將自動記錄一筆「想要」支出 $${item.price.toLocaleString()})`)) {
+                deductPoints(item.reqPoints);
+                item.redeemed = true;
+
+                financeItems.push({
+                    id: 'fin-' + Date.now(),
+                    name: `🎁 兌換願望: ${item.name}`,
+                    amount: item.price,
+                    type: 'Expense',
+                    kind: 'Want',
+                    deductedPts: item.reqPoints,
+                    isRedeem: true
+                });
+
+                recalculateFinance();
+                saveFinanceData();
+                saveWishlistData();
+                renderWishlist();
+            }
+        });
+    }
+
+    function deleteWishItem(id) {
+        wishlist = wishlist.filter(w => w.id !== id);
+        saveWishlistData();
+        renderWishlist();
+    }
+
+    function renderWishlist() {
+        const container = document.getElementById('wishlist-container');
+        container.innerHTML = '';
+
+        wishlist.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'item' + (item.redeemed ? ' completed' : '');
+
+            const canAfford = totalPoints >= item.reqPoints && !item.redeemed;
+
+            li.innerHTML = `
+                <div class="item-left">
+                    <span class="badge-tag badge-pts">需 ${item.reqPoints} 點</span>
+                    <span>${item.name} ($${item.price.toLocaleString()})</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    ${item.redeemed 
+                        ? `<span class="badge-tag" style="background:#c8e6c9; color:#2e7d32;">🎉 已兌換成功</span>`
+                        : `<button class="${canAfford ? 'btn-pink' : 'btn-secondary'}" onclick="redeemWishItem('${item.id}')">${canAfford ? '🔐 請求兌換' : '點數不足'}</button>`
+                    }
+                    <button class="btn-del" onclick="deleteWishItem('${item.id}')">✕</button>
+                </div>
+            `;
+            container.appendChild(li);
+        });
+    }
+
+    function saveWishlistData() {
+        localStorage.setItem('gigi_planner_wishlist', JSON.stringify(wishlist));
+    }
+
+    /* 💰 記帳理財邏輯 */
+
+    function addOtherIncome() {
+        const nameInput = document.getElementById('other-income-name');
+        const amountInput = document.getElementById('other-income-amount');
+        const name = nameInput.value.trim();
+        const amount = parseFloat(amountInput.value);
+
+        if (!name || isNaN(amount) || amount <= 0) {
+            alert('請輸入其他收入項目與有效金額。');
+            return;
+        }
+
+        financeItems.push({
+            id: 'fin-other-' + Date.now(),
+            name: name,
+            amount: amount,
+            type: 'Income',
+            kind: '其他收入'
+        });
+        otherIncomeTotal += amount;
+
+        nameInput.value = '';
+        amountInput.value = '';
+        recalculateFinance();
+        saveFinanceData();
+    }
+
+    function addTutorIncome() {
+        const hours = parseFloat(document.getElementById('tutor-hours').value);
+        const amount = hours * 1200;
+        
+        tutorIncomeTotal += amount;
+        
+        financeItems.push({
+            id: 'fin-' + Date.now(),
+            name: `家教收入 (${hours} 小時)`,
+            amount: amount,
+            type: 'Income',
+            kind: '家教'
+        });
+
+        recalculateFinance();
+        saveFinanceData();
+    }
+
+    function addExpense() {
+        const nameInput = document.getElementById('expense-name');
+        const amountInput = document.getElementById('expense-amount');
+        const typeSelect = document.getElementById('expense-type');
+
+        const name = nameInput.value.trim();
+        const amount = parseFloat(amountInput.value);
+        const kind = typeSelect.value;
+
+        if (!name || isNaN(amount) || amount <= 0) return;
+
+        let deductedPts = 0;
+
+        if (kind === 'Want') {
+            deductedPts = parseFloat((amount / 100).toFixed(1));
+            deductPoints(deductedPts);
+            alert(`🛒 新增「想要」支出 $${amount}，已自動連動扣除 ${deductedPts} 點獎勵！`);
+        }
+
+        financeItems.push({
+            id: 'fin-' + Date.now(),
+            name: name,
+            amount: amount,
+            type: 'Expense',
+            kind: kind,
+            deductedPts: deductedPts,
+            isRedeem: false
+        });
+
+        nameInput.value = '';
+        amountInput.value = '';
+
+        recalculateFinance();
+        saveFinanceData();
+    }
+
+    function deleteFinanceItem(id) {
+        const item = financeItems.find(i => i.id === id);
+        if (item) {
+            if (item.deductedPts && item.deductedPts > 0) {
+                addPoints(item.deductedPts);
+                alert(`ℹ️ 已刪除記帳「${item.name}」，並補回 ${item.deductedPts} 點點數！`);
+            }
+        }
+        financeItems = financeItems.filter(item => item.id !== id);
+        recalculateFinance();
+        saveFinanceData();
+    }
+
+    function recalculateFinance() {
+        let currentTutorIncome = 0;
+        let currentOtherIncome = 0;
+        let wantSpent = 0;
+
+        const listContainer = document.getElementById('finance-list');
+        listContainer.innerHTML = '';
+
+        financeItems.forEach(item => {
+            if (item.type === 'Income') {
+                if (item.kind === '家教') currentTutorIncome += item.amount;
+                if (item.kind === '其他收入') currentOtherIncome += item.amount;
+            } else if (item.type === 'Expense' && item.kind === 'Want') {
+                wantSpent += item.amount;
+            }
+
+            const li = document.createElement('li');
+            li.className = 'item';
+            
+            let tagHTML = item.type === 'Income' 
+                ? `<span class="badge-tag" style="background:#c8e6c9; color:#2e7d32;">收入</span>`
+                : (item.kind === 'Need' ? `<span class="badge-tag">需要</span>` : `<span class="badge-tag badge-want">想要 (${item.deductedPts || 0}點)</span>`);
+
+            li.innerHTML = `
+                <div class="item-left">
+                    ${tagHTML}
+                    <span>${item.name}</span>
+                </div>
+                <div>
+                    <span style="font-weight:bold; color:${item.type === 'Income' ? '#2e7d32' : 'var(--pink-dark)'};">
+                        ${item.type === 'Income' ? '+' : '-'}$${item.amount.toLocaleString()}
+                    </span>
+                    <button class="btn-del" onclick="deleteFinanceItem('${item.id}')">✕</button>
+                </div>
+            `;
+            listContainer.appendChild(li);
+        });
+
+        tutorIncomeTotal = currentTutorIncome;
+        otherIncomeTotal = currentOtherIncome;
+
+        // 本月累積收入 = 基本收入 + 家教收入 + 其他收入
+        const totalIncome = baseIncome + tutorIncomeTotal + otherIncomeTotal;
+
+        document.getElementById('total-income-txt').innerText = `$${totalIncome.toLocaleString()}`;
+        document.getElementById('want-spent-txt').innerText = `$${wantSpent.toLocaleString()}`;
+
+        const alertBox = document.getElementById('want-alert');
+        const wantLimitTxt = document.getElementById('want-limit-txt');
+
+        if (wantSpent > BASE_WEEKLY_WANT_LIMIT) {
+            const overflow = wantSpent - BASE_WEEKLY_WANT_LIMIT;
+            const nextWeekLimit = Math.max(0, BASE_WEEKLY_WANT_LIMIT - overflow);
+            
+            alertBox.style.display = 'block';
+            alertBox.innerHTML = `⚠️ <b>「想要」超額提醒：</b>本週已超額 $${overflow.toLocaleString()}！下週可用額度調整為 <b>$${nextWeekLimit.toLocaleString()}</b>。`;
+            wantLimitTxt.innerText = `$${BASE_WEEKLY_WANT_LIMIT.toLocaleString()} (超額)`;
+            wantLimitTxt.style.color = 'var(--alert-red)';
+        } else {
+            alertBox.style.display = 'none';
+            wantLimitTxt.innerText = `$${BASE_WEEKLY_WANT_LIMIT.toLocaleString()}`;
+            wantLimitTxt.style.color = 'var(--pink-dark)';
+        }
+    }
+
+    function saveFinanceData() {
+        localStorage.setItem('neo_pink_planner_finance', JSON.stringify(financeItems));
+        tutorIncomeTotal = financeItems.filter(i => i.type === 'Income' && i.kind === '家教')
+            .reduce((s, i) => s + Number(i.amount || 0), 0);
+        otherIncomeTotal = financeItems.filter(i => i.type === 'Income' && i.kind === '其他收入')
+            .reduce((s, i) => s + Number(i.amount || 0), 0);
+    }
+
+    /* 📅 月曆與選取日期 */
+    function renderCalendar() {
+        const year = todayObj.getFullYear();
+        const month = todayObj.getMonth();
+
+        document.getElementById('month-title').innerText = `${year} 年 ${month + 1} 月`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const calContainer = document.getElementById('cal-dates');
+        calContainer.innerHTML = '';
+
+        for (let i = 0; i < firstDay; i++) {
+            calContainer.appendChild(document.createElement('div'));
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = formatDateStr(year, month + 1, day);
+            const dateCell = document.createElement('div');
+            dateCell.className = 'cal-date';
+
+            if (dateStr === todayStr) dateCell.classList.add('today');
+            if (dateStr === selectedDateStr) dateCell.classList.add('selected');
+
+            if (dateTasks[dateStr] && dateTasks[dateStr].length > 0) {
+                dateCell.classList.add('has-task');
+            }
+
+            dateCell.innerText = day;
+            dateCell.onclick = () => selectDate(dateStr);
+
+            calContainer.appendChild(dateCell);
+        }
+    }
+
+    function selectDate(dateStr) {
+        selectedDateStr = dateStr;
+        renderCalendar();
+        renderWeekStrip();
+        renderDateTasks();
+    }
+
+    function renderWeekStrip() {
+        const currentDay = todayObj.getDay(); 
+        const weekContainer = document.getElementById('week-strip');
+        weekContainer.innerHTML = '';
+
+        const days = ['日', '一', '二', '三', '四', '五', '六'];
+        
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(todayObj);
+            date.setDate(todayObj.getDate() - currentDay + i);
+
+            const dateStr = formatDateStr(date.getFullYear(), date.getMonth() + 1, date.getDate());
+
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'week-day';
+            if (dateStr === selectedDateStr) dayDiv.classList.add('active');
+
+            dayDiv.onclick = () => selectDate(dateStr);
+
+            dayDiv.innerHTML = `
+                <div style="font-size:0.7rem; color:var(--text-sub);">${days[i]}</div>
+                <div style="font-size:0.9rem; font-weight:bold; margin-top:2px;">${date.getDate()}</div>
+            `;
+            weekContainer.appendChild(dayDiv);
+        }
+    }
+
+    /* 📅 日期截止任務管理 */
+    function renderDateTasks() {
+        const titleContainer = document.getElementById('date-planner-title');
+        const isToday = (selectedDateStr === todayStr);
+        titleContainer.innerHTML = `📅 ${selectedDateStr} 預計截止作業與計劃 ${isToday ? '<span class="badge-tag" style="background:var(--pink-primary); color:white; margin-left:8px;">今天</span>' : ''}`;
+
+        const list = document.getElementById('date-task-list');
+        list.innerHTML = '';
+
+        const tasks = dateTasks[selectedDateStr] || [];
+
+        tasks.forEach(task => {
+            const li = document.createElement('li');
+            li.className = 'item' + (task.completed ? ' completed' : '');
+
+            li.innerHTML = `
+                <div class="item-left">
+                    <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleDateTask('${task.id}', this, ${task.pts || 0.5})">
+                    <span class="badge-tag badge-pts">+${task.pts || 0.5}點</span>
+                    <span>${task.text}</span>
+                </div>
+                <button class="btn-del" onclick="deleteDateTask('${task.id}')">✕</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    function addDateTask() {
+        const input = document.getElementById('date-task-input');
+        const diffSel = document.getElementById('date-task-diff');
+        const text = input.value.trim();
+        const pts = parseFloat(diffSel.value);
+
+        if (!text) return;
+
+        if (!dateTasks[selectedDateStr]) {
+            dateTasks[selectedDateStr] = [];
+        }
+
+        dateTasks[selectedDateStr].push({
+            id: 'dt-' + Date.now(),
+            text: text,
+            pts: pts,
+            completed: false
+        });
+
+        input.value = '';
+        saveDateTasks();
+        renderCalendar();
+        renderDateTasks();
+        checkTodayDueAlert();
+    }
+
+    function toggleDateTask(taskId, checkbox, pts) {
+        const isNowChecked = checkbox.checked;
+        runWithAuth(() => {
+            checkbox.checked = isNowChecked;
+            const tasks = dateTasks[selectedDateStr] || [];
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = isNowChecked;
+                if (isNowChecked) {
+                    addPoints(pts);
+                } else {
+                    deductPoints(pts);
+                }
+                saveDateTasks();
+                renderDateTasks();
+                checkTodayDueAlert();
+            }
+        }, () => {
+            checkbox.checked = !isNowChecked;
+        });
+    }
+
+    function deleteDateTask(taskId) {
+        if (dateTasks[selectedDateStr]) {
+            dateTasks[selectedDateStr] = dateTasks[selectedDateStr].filter(t => t.id !== taskId);
+            if (dateTasks[selectedDateStr].length === 0) {
+                delete dateTasks[selectedDateStr];
+            }
+            saveDateTasks();
+            renderCalendar();
+            renderDateTasks();
+            checkTodayDueAlert();
+        }
+    }
+
+    function saveDateTasks() {
+        localStorage.setItem('gigi_planner_date_tasks', JSON.stringify(dateTasks));
+    }
+
+    function checkTodayDueAlert() {
+        const alertBox = document.getElementById('today-due-alert');
+        const alertList = document.getElementById('today-due-list');
+
+        const todayTasks = dateTasks[todayStr] || [];
+        const pendingTodayTasks = todayTasks.filter(t => !t.completed);
+
+        if (pendingTodayTasks.length > 0) {
+            alertBox.style.display = 'block';
+            alertList.innerHTML = '';
+            pendingTodayTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.style.marginTop = '4px';
+                li.innerText = task.text;
+                alertList.appendChild(li);
+            });
+        } else {
+            alertBox.style.display = 'none';
+        }
+    }
+
+    /* 💊 吃藥全天加點邏輯 */
+    function checkMedicationCompletion(checkbox) {
+        const isNowChecked = checkbox.checked;
+        runWithAuth(() => {
+            checkbox.checked = isNowChecked;
+            
+            const allMeds = document.querySelectorAll('#med-list input[type="checkbox"]');
+            let allChecked = true;
+
+            allMeds.forEach(cb => {
+                const li = cb.closest('.item');
+                if (cb.checked) {
+                    li.classList.add('completed');
+                } else {
+                    li.classList.remove('completed');
+                    allChecked = false;
+                }
+            });
+
+            if (allChecked && !medBonusAwardedToday) {
+                medBonusAwardedToday = true;
+                addPoints(0.5);
+                alert('🌸 太棒了！今天已按時吃完所有藥物，獲得獎勵點數 +0.5 點！✨');
+            } else if (!allChecked && medBonusAwardedToday) {
+                medBonusAwardedToday = false;
+                deductPoints(0.5);
+            }
+
+            saveAllLists();
+        }, () => {
+            checkbox.checked = !isNowChecked;
+        });
+    }
+
+    /* 🏃‍♀️ 健身打卡與加點邏輯 */
+    function updateGymCount(change) {
+        runWithAuth(() => {
+            const prevCount = gymCount;
+            gymCount = Math.max(0, Math.min(3, gymCount + change));
+
+            if (gymCount === 3 && !gymBonusAwardedThisWeek) {
+                gymBonusAwardedThisWeek = true;
+                addPoints(2.0);
+                alert('🎉 恭喜！本週完成健身房 3 次目標，獲得額外獎勵 +2.0 點！🏋️‍♀️');
+            } else if (prevCount === 3 && gymCount < 3 && gymBonusAwardedThisWeek) {
+                gymBonusAwardedThisWeek = false;
+                deductPoints(2.0);
+            }
+
+            renderGymUI();
+            saveHabits();
+        });
+    }
+
+    function resetGymCount() {
+        runWithAuth(() => {
+            if (gymCount === 3 && gymBonusAwardedThisWeek) {
+                gymBonusAwardedThisWeek = false;
+                deductPoints(2.0);
+            }
+            gymCount = 0;
+            renderGymUI();
+            saveHabits();
+        });
+    }
+
+    function renderGymUI() {
+        document.getElementById('gym-count-text').innerText = `${gymCount} / 3 次`;
+        const percentage = (gymCount / 3) * 100;
+        document.getElementById('gym-progress').style.width = `${percentage}%`;
+    }
+
+    /* 自訂任務 */
+    function addCustomTask(inputId, listId, diffId, tagText) {
+        const input = document.getElementById(inputId);
+        const diffSel = document.getElementById(diffId);
+
+        const text = input.value.trim();
+        const pts = parseFloat(diffSel.value);
+
+        if (!text) return;
+
+        const list = document.getElementById(listId);
+        const itemId = 'item-' + Date.now();
+
+        const li = document.createElement('li');
+        li.className = 'item';
+        li.setAttribute('data-id', itemId);
+        li.setAttribute('data-pts', pts);
+
+        li.innerHTML = `
+            <div class="item-left">
+                <input type="checkbox" onchange="togglePointTask(this, ${pts})">
+                ${tagText ? `<span class="badge-tag">${tagText}</span>` : ''}
+                <span class="badge-tag badge-pts">+${pts}點</span>
+                <span>${text}</span>
+            </div>
+            <button class="btn-del" onclick="deletePointTask(this)">✕</button>
+        `;
+
+        list.appendChild(li);
+        input.value = '';
+        saveAllLists();
+    }
+
+    function togglePointTask(checkbox, pts) {
+        const isNowChecked = checkbox.checked;
+        runWithAuth(() => {
+            checkbox.checked = isNowChecked;
+            const item = checkbox.closest('.item');
+            if (isNowChecked) {
+                item.classList.add('completed');
+                addPoints(pts);
+            } else {
+                item.classList.remove('completed');
+                deductPoints(pts);
+            }
+            saveAllLists();
+        }, () => {
+            checkbox.checked = !isNowChecked;
+        });
+    }
+
+    function deletePointTask(btn) {
+        const item = btn.closest('.item');
+        const cb = item.querySelector('input[type="checkbox"]');
+        const pts = parseFloat(item.getAttribute('data-pts') || 0);
+
+        if (cb && cb.checked) {
+            deductPoints(pts);
+        }
+
+        item.remove();
+        saveAllLists();
+    }
+
+    /* 🏫 課表繪製與管理 */
+    function initModalSelectors() {
+        const startSel = document.getElementById('modal-c-start');
+        const endSel = document.getElementById('modal-c-end');
+        startSel.innerHTML = '';
+        endSel.innerHTML = '';
+
+        periods.forEach(p => {
+            startSel.innerHTML += `<option value="${p.id}">${p.label} (${p.time})</option>`;
+            endSel.innerHTML += `<option value="${p.id}">${p.label} (${p.time})</option>`;
+        });
+    }
+
+    function renderTimetable() {
+        const tbody = document.getElementById('timetable-body');
+        tbody.innerHTML = '';
+
+        periods.forEach(p => {
+            const tr = document.createElement('tr');
+            
+            tr.innerHTML = `
+                <td class="time-col">
+                    <div style="font-weight:bold;">${p.label}</div>
+                    <div style="font-size:0.68rem; color:#a08088;">${p.time.replace(' - ', '<br>')}</div>
+                </td>
+            `;
+
+            for (let day = 1; day <= 5; day++) {
+                const activeCourse = courses.find(c => c.day === day && p.id >= c.start && p.id <= c.end);
+
+                if (activeCourse) {
+                    if (p.id === activeCourse.start) {
+                        const rowSpan = activeCourse.end - activeCourse.start + 1;
+                        const td = document.createElement('td');
+                        td.rowSpan = rowSpan;
+                        td.style.padding = '3px';
+
+                        td.innerHTML = `
+                            <div class="course-card" style="background-color: ${activeCourse.color || '#f8bbd0'};" onclick="editCourse('${activeCourse.id}')">
+                                <div>${activeCourse.name}</div>
+                                <div style="font-size:0.68rem; opacity:0.8; font-weight:normal; margin-top:2px;">
+                                    ${activeCourse.start === activeCourse.end ? `${activeCourse.start}節` : `${activeCourse.start}~${activeCourse.end}節`}
+                                </div>
+                            </div>
+                        `;
+                        tr.appendChild(td);
+                    }
+                } else {
+                    tr.appendChild(document.createElement('td'));
+                }
+            }
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function loadSchedule() {
+        const saved = localStorage.getItem('neo_pink_planner_schedule');
+        if (saved) {
+            courses = JSON.parse(saved);
+        } else {
+            courses = [...defaultCourses];
+        }
+        renderTimetable();
+    }
+
+    function saveSchedule() {
+        localStorage.setItem('neo_pink_planner_schedule', JSON.stringify(courses));
+        renderTimetable();
+    }
+
+    function resetDefaultSchedule() {
+        if (confirm('確定要將課表重置為預設課表嗎？')) {
+            courses = [...defaultCourses];
+            saveSchedule();
+        }
+    }
+
+    function openCourseModal() {
+        editingCourseId = null;
+        document.getElementById('modal-title-txt').innerText = '🌸 手動新增課程';
+        document.getElementById('modal-c-name').value = '';
+        document.getElementById('modal-c-day').value = '1';
+        document.getElementById('modal-c-start').value = '1';
+        document.getElementById('modal-c-end').value = '1';
+        document.getElementById('btn-delete-course').style.display = 'none';
+
+        document.getElementById('course-modal').style.display = 'flex';
+    }
+
+    function editCourse(id) {
+        const c = courses.find(item => item.id === id);
+        if (!c) return;
+
+        editingCourseId = id;
+        document.getElementById('modal-title-txt').innerText = '🌸 編輯 / 刪除課程';
+        document.getElementById('modal-c-name').value = c.name;
+        document.getElementById('modal-c-day').value = c.day;
+        document.getElementById('modal-c-start').value = c.start;
+        document.getElementById('modal-c-end').value = c.end;
+        document.getElementById('btn-delete-course').style.display = 'inline-block';
+
+        document.getElementById('course-modal').style.display = 'flex';
+    }
+
+    function closeCourseModal() {
+        document.getElementById('course-modal').style.display = 'none';
+    }
+
+    function saveCourseFromModal() {
+        const name = document.getElementById('modal-c-name').value.trim();
+        const day = parseInt(document.getElementById('modal-c-day').value);
+        const start = parseInt(document.getElementById('modal-c-start').value);
+        const end = parseInt(document.getElementById('modal-c-end').value);
+
+        if (!name || start > end) return;
+
+        const colors = ['#f8bbd0', '#e1bee7', '#bbdefb', '#c8e6c9', '#ffe0b2', '#ffcc80', '#b2dfdb', '#f48fb1'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+        if (editingCourseId) {
+            const idx = courses.findIndex(c => c.id === editingCourseId);
+            if (idx !== -1) courses[idx] = { ...courses[idx], name, day, start, end };
+        } else {
+            courses.push({ id: 'c-' + Date.now(), name, day, start, end, color: randomColor });
+        }
+
+        saveSchedule();
+        closeCourseModal();
+    }
+
+    function deleteCurrentCourse() {
+        if (!editingCourseId) return;
+        courses = courses.filter(c => c.id !== editingCourseId);
+        saveSchedule();
+        closeCourseModal();
+    }
+
+    /* 通用數據儲存 */
+
+    async function saveEverything() {
+        try {
+            saveAllLists();
+            saveHabits();
+            savePointsData();
+            saveWishlistData();
+            localStorage.setItem('gigi_planner_date_tasks', JSON.stringify(dateTasks));
+            saveFinanceData();
+            saveSchedule();
+            localStorage.setItem('gigi_planner_password', AUG_PASSWORD);
+
+            document.getElementById('save-status').innerText = '☁️ 正在同步到 Supabase...';
+
+            await saveCloudData();
+
+            const now = new Date();
+            document.getElementById('save-status').innerText =
+                `✅ 已同步全部變更 · ${now.toLocaleString('zh-TW', {hour12:false})}`;
+
+            alert('✅ 所有變更已儲存，並同步到 Supabase！\n\n其他手機重新整理後即可看到最新資料。');
+        } catch (err) {
+            console.error(err);
+            document.getElementById('save-status').innerText = '❌ 雲端同步失敗';
+            alert('❌ 雲端同步失敗。\n\n請確認網路、Supabase 設定與 RLS policy。');
+        }
+    }
+    function saveAllLists() {
+        const data = {
+            meds: getListState('med-list'),
+            study: getListState('study-list'),
+            sport: getListState('sport-list')
+        };
+        localStorage.setItem('neo_pink_planner_data', JSON.stringify(data));
+    }
+
+    function saveHabits() {
+        const habits = {
+            wake: document.getElementById('wake-time').value,
+            sleep: document.getElementById('sleep-time').value,
+            water: document.getElementById('water-intake').value,
+            gymCount: gymCount
+        };
+        localStorage.setItem('neo_pink_planner_habits', JSON.stringify(habits));
+    }
+
+    function getListState(listId) {
+        const items = [];
+        document.querySelectorAll(`#${listId} .item`).forEach(li => {
+            const checkbox = li.querySelector('input[type="checkbox"]');
+            const textSpan = li.querySelector('.item-left span:last-child');
+            const pts = li.getAttribute('data-pts') || 0;
+
+            items.push({
+                id: li.getAttribute('data-id'),
+                text: textSpan ? textSpan.innerText : '',
+                pts: parseFloat(pts),
+                checked: checkbox ? checkbox.checked : false
+            });
+        });
+        return items;
+    }
+
+    function loadSavedData() {
+        const savedPts = localStorage.getItem('gigi_planner_points');
+        if (savedPts !== null) totalPoints = parseFloat(savedPts);
+
+        medBonusAwardedToday = localStorage.getItem('gigi_planner_med_bonus') === 'true';
+        gymBonusAwardedThisWeek = localStorage.getItem('gigi_planner_gym_bonus') === 'true';
+
+        prevWakePts = parseFloat(localStorage.getItem('gigi_planner_prev_wake_pts') || 0);
+        prevSleepPts = parseFloat(localStorage.getItem('gigi_planner_prev_sleep_pts') || 0);
+
+        const savedWishlist = localStorage.getItem('gigi_planner_wishlist');
+        if (savedWishlist) wishlist = JSON.parse(savedWishlist);
+
+        const savedDateTasks = localStorage.getItem('gigi_planner_date_tasks');
+        if (savedDateTasks) dateTasks = JSON.parse(savedDateTasks);
+
+        const savedData = localStorage.getItem('neo_pink_planner_data');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            if (data.meds) {
+                data.meds.forEach(savedMed => {
+                    const li = document.querySelector(`#med-list .item[data-id="${savedMed.id}"]`);
+                    if (li) {
+                        const cb = li.querySelector('input[type="checkbox"]');
+                        if (cb) {
+                            cb.checked = savedMed.checked;
+                            if (savedMed.checked) li.classList.add('completed');
+                        }
+                    }
+                });
+            }
+            loadCustomList('study-list', data.study, '讀書');
+            loadCustomList('sport-list', data.sport, '運動');
+        }
+
+        const savedHabits = localStorage.getItem('neo_pink_planner_habits');
+        if (savedHabits) {
+            const habits = JSON.parse(savedHabits);
+            if (habits.wake) document.getElementById('wake-time').value = habits.wake;
+            if (habits.sleep) document.getElementById('sleep-time').value = habits.sleep;
+            if (habits.water) document.getElementById('water-intake').value = habits.water;
+            if (habits.gymCount !== undefined) {
+                gymCount = habits.gymCount;
+                renderGymUI();
+            }
+        }
+
+        const savedFinance = localStorage.getItem('neo_pink_planner_finance');
+        if (savedFinance) {
+            financeItems = JSON.parse(savedFinance);
+            tutorIncomeTotal = financeItems.filter(i => i.type === 'Income' && i.kind === '家教')
+                .reduce((s, i) => s + Number(i.amount || 0), 0);
+            otherIncomeTotal = financeItems.filter(i => i.type === 'Income' && i.kind === '其他收入')
+                .reduce((s, i) => s + Number(i.amount || 0), 0);
+        }
+
+        const savedPassword = localStorage.getItem('gigi_planner_password');
+        if (savedPassword) AUG_PASSWORD = savedPassword;
+    }
+
+    function loadCustomList(listId, items, tagText) {
+        if (!items) return;
+        const list = document.getElementById(listId);
+        list.innerHTML = '';
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'item' + (item.checked ? ' completed' : '');
+            li.setAttribute('data-id', item.id);
+            li.setAttribute('data-pts', item.pts || 0.5);
+
+            li.innerHTML = `
+                <div class="item-left">
+                    <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="togglePointTask(this, ${item.pts || 0.5})">
+                    ${tagText ? `<span class="badge-tag">${tagText}</span>` : ''}
+                    <span class="badge-tag badge-pts">+${item.pts || 0.5}點</span>
+                    <span>${item.text}</span>
+                </div>
+                <button class="btn-del" onclick="deletePointTask(this)">✕</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+</script>
+
+</body>
+</html>
