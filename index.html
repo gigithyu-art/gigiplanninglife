@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <!-- version 2026-08-10-v3-optimized -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gigi的生活計劃</title>
@@ -564,6 +565,25 @@
             height: 100%;
         }
 
+        .course-attendance-list { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.course-attendance-btn {
+            margin-top: 5px;
+            border: 1px solid rgba(181, 74, 98, 0.35);
+            background: rgba(255,255,255,.75);
+            color: var(--pink-dark);
+            border-radius: 7px;
+            padding: 3px 7px;
+            font-size: .68rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .course-attendance-btn.done {
+            background: #c8e6c9;
+            color: #2e7d32;
+            border-color: #81c784;
+        }
+        .calendar-nav-spacer { min-height: 1px; }
+
         .course-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 10px rgba(240, 113, 143, 0.3);
@@ -753,7 +773,14 @@
             
             <!-- 月曆 Calendar Widget -->
             <div class="card">
-                <div class="calendar-header" id="month-title">2026 年 8 月</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
+                    <button class="btn-secondary" onclick="changeCalendarMonth(-1)" aria-label="上個月">‹</button>
+                    <div class="calendar-header" id="month-title" style="margin-bottom:0;flex:1;">2026 年 8 月</div>
+                    <button class="btn-secondary" onclick="changeCalendarMonth(1)" aria-label="下個月">›</button>
+                </div>
+                <div style="display:flex;justify-content:center;margin-bottom:8px;">
+                    <button class="btn-secondary" onclick="goCalendarToday()">回到今天</button>
+                </div>
                 <div class="cal-grid">
                     <div class="cal-day-name">日</div>
                     <div class="cal-day-name">一</div>
@@ -774,7 +801,7 @@
 
             <!-- 作息與水份紀錄 (修改時間需要密碼權限) -->
             <div class="card">
-                <div class="card-title">🌙 作息 & 水份獎勵 🔐</div>
+                <div class="card-title">🌙 作息 & 水份獎勵 🔐</div><span id="routine-date-label" class="badge-tag"></span>
                 <div style="font-size: 0.72rem; color: var(--text-sub); margin-bottom: 8px;">
                     ⏰ 09:00前+0.5 | 10:00前+0.2 (自動計算/防刷點)<br>
                     😴 24:00前+0.5 | 01:00前+0.2
@@ -847,6 +874,10 @@
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">💰 理財記帳與預算管理 (新增「想要」將自動扣點)</div>
+                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                        <span id="finance-date-label" class="badge-tag"></span>
+                        <button class="btn-secondary" id="finance-month-btn" onclick="toggleFinanceMonthView()">📊 查看整個月</button>
+                    </div>
                 </div>
 
                 <div class="finance-summary">
@@ -866,6 +897,14 @@
                     <div class="finance-box">
                         <div class="finance-title">本週「想要」已消費</div>
                         <div class="finance-amount" id="want-spent-txt" style="color:var(--pink-primary);">$0</div>
+                    </div>
+                    <div class="finance-box">
+                        <div class="finance-title">本週「需要」總消費</div>
+                        <div class="finance-amount" id="need-spent-txt" style="color:#7b6d73;">$0</div>
+                    </div>
+                    <div class="finance-box">
+                        <div class="finance-title">本週總支出</div>
+                        <div class="finance-amount" id="total-spent-txt" style="color:var(--pink-dark);">$0</div>
                     </div>
                 </div>
 
@@ -959,7 +998,7 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">📖 讀書計劃</div>
+                        <div class="card-title">📖 讀書計劃 <span id="study-date-label" class="badge-tag"></span></div>
                     </div>
                     <div class="input-group">
                         <input type="text" id="study-input" placeholder="新增科目 / 章節...">
@@ -975,7 +1014,7 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">🏃‍♀️ 運動計劃</div>
+                        <div class="card-title">🏃‍♀️ 運動計劃 <span id="sport-date-label" class="badge-tag"></span></div>
                     </div>
 
                     <div class="gym-tracker">
@@ -1021,7 +1060,10 @@
             <div class="card" style="margin-top: 10px;">
                 <div class="card-header">
                     <div class="card-title">🏫 大學課表 (Schedule)</div>
-                    <div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:center;">
+                        <button class="btn-secondary" onclick="changeScheduleWeek(-7)">← 上一週</button>
+                        <button class="btn-secondary" onclick="goScheduleThisWeek()">本週</button>
+                        <button class="btn-secondary" onclick="changeScheduleWeek(7)">下一週 →</button>
                         <button class="btn-secondary" onclick="resetDefaultSchedule()">重置為預設課表</button>
                         <button class="btn-pink" onclick="openCourseModal()">＋ 新增/編輯課程</button>
                     </div>
@@ -1128,6 +1170,17 @@
     </div>
 </div>
 
+<!-- 🎂 生日彩蛋 Modal -->
+<div class="modal-overlay" id="birthday-modal">
+    <div class="modal-card" style="text-align:center; position:relative; overflow:hidden;">
+        <div id="birthday-sparkles" style="position:absolute; inset:0; pointer-events:none; font-size:1.4rem; opacity:.9;"></div>
+        <div id="birthday-emoji" style="font-size:3.2rem; margin-bottom:6px; position:relative; z-index:1;">🎂</div>
+        <div class="modal-title" id="birthday-title" style="position:relative; z-index:1;">生日快樂！</div>
+        <div id="birthday-message" style="font-size:.95rem; line-height:1.7; color:var(--text-sub); margin:10px 0 16px; position:relative; z-index:1;"></div>
+        <button class="btn-pink" onclick="closeBirthdayModal()" style="position:relative; z-index:1;">🎀 收下生日祝福</button>
+    </div>
+</div>
+
 <!-- 課程 Modal -->
 <div class="modal-overlay" id="course-modal">
     <div class="modal-card">
@@ -1152,7 +1205,14 @@
                 </div>
             </div>
 
-            <div style="display:flex; gap:8px;">
+
+            <div>
+                <label style="font-size:0.8rem; color:var(--text-sub);">指定日期（選填）</label>
+                <input type="date" id="modal-c-date" style="width:100%; margin-top:4px;">
+                <div style="font-size:0.7rem; color:var(--text-sub); margin-top:4px;">不填＝每週固定星期；填寫後＝只在這一天出現，可讓不同週安排不同課表。</div>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:flex-end;">
                 <div style="flex:1;">
                     <label style="font-size:0.8rem; color:var(--text-sub);">開始節次</label>
                     <select id="modal-c-start" style="width:100%; margin-top:4px;"></select>
@@ -1160,6 +1220,11 @@
                 <div style="flex:1;">
                     <label style="font-size:0.8rem; color:var(--text-sub);">結束節次</label>
                     <select id="modal-c-end" style="width:100%; margin-top:4px;"></select>
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:0.8rem; color:var(--text-sub);">每節點數</label>
+                    <input type="number" id="modal-c-pts" min="0" max="100" step="0.1" value="0.2" style="width:100%; margin-top:4px;">
+                    <div style="font-size:0.68rem; color:var(--text-sub); margin-top:3px;">預設 0.2；修改點數需審核密碼</div>
                 </div>
             </div>
 
@@ -1194,7 +1259,11 @@
         'neo_pink_planner_habits',
         'neo_pink_planner_finance',
         'neo_pink_planner_schedule',
-        'gigi_planner_password'
+        'gigi_planner_password',
+        'gigi_planner_routine_by_date',
+        'gigi_planner_gym_by_week',
+        'gigi_planner_course_attendance',
+        'gigi_planner_daily_plans'
     ];
 
     async function loadCloudData() {
@@ -1280,8 +1349,22 @@
     let medBonusAwardedToday = false;
     let gymBonusAwardedThisWeek = false;
 
+    // 每天獨立的作息資料
+    let routineByDate = {};
     let prevWakePts = 0.0;
     let prevSleepPts = 0.0;
+
+    // 每週獨立的健身房進度與課表出席紀錄
+    let gymByWeek = {};
+    let courseAttendance = {};
+
+    // 讀書／其他運動只保存「每天」的資料
+    let dailyPlans = {};
+    let financeMonthView = false;
+
+    // 月曆可無限往前／往後切換
+    let calendarViewYear = todayObj.getFullYear();
+    let calendarViewMonth = todayObj.getMonth();
 
     let wishlist = [];
     let dateTasks = {};
@@ -1337,6 +1420,9 @@
         renderWishlist();
         initModalSelectors();
         loadSchedule();
+        loadRoutineForDate(selectedDateStr);
+        loadGymForDate(selectedDateStr);
+        renderDailyPlans();
         recalculateFinance();
         updateAuthBtnUI();
     });
@@ -1347,93 +1433,102 @@
         return `${year}-${m}-${d}`;
     }
 
-    /* 🌅 作息時間變更與自動試算核發機制 */
+    /* 🌅 每日獨立作息：每一天都有自己的起床／就寢／喝水與獎勵狀態 */
+    function getRoutine(dateStr = selectedDateStr) {
+        if (!routineByDate[dateStr]) {
+            routineByDate[dateStr] = {
+                wake: '08:30',
+                sleep: '23:30',
+                water: '1500 ml',
+                wakePts: 0,
+                sleepPts: 0
+            };
+        }
+        return routineByDate[dateStr];
+    }
+
+    function loadRoutineForDate(dateStr) {
+        const r = getRoutine(dateStr);
+        document.getElementById('wake-time').value = r.wake || '08:30';
+        document.getElementById('sleep-time').value = r.sleep || '23:30';
+        document.getElementById('water-intake').value = r.water || '1500 ml';
+        prevWakePts = Number(r.wakePts || 0);
+        prevSleepPts = Number(r.sleepPts || 0);
+        const label = document.getElementById('routine-date-label');
+        if (label) label.innerText = dateStr === todayStr ? '今天' : dateStr;
+    }
+
+    function saveRoutineData() {
+        localStorage.setItem('gigi_planner_routine_by_date', JSON.stringify(routineByDate));
+        // 舊欄位保留，避免舊版本資料遺失
+        localStorage.setItem('gigi_planner_prev_wake_pts', prevWakePts);
+        localStorage.setItem('gigi_planner_prev_sleep_pts', prevSleepPts);
+    }
+
     function storeOldTime(inputEl) {
         tempOldValue = inputEl.value;
     }
 
     function evaluateWakeTime(inputEl) {
-        runWithAuth(() => {
-            processWakeTimeLogic();
-        }, () => {
-            inputEl.value = tempOldValue;
-        });
+        runWithAuth(() => processWakeTimeLogic(), () => { inputEl.value = tempOldValue; });
     }
 
     function processWakeTimeLogic() {
+        const r = getRoutine(selectedDateStr);
         const wakeVal = document.getElementById('wake-time').value;
         if (!wakeVal) return;
-
         const [hrs, mins] = wakeVal.split(':').map(Number);
         const totalMins = hrs * 60 + mins;
+        let currentPts = totalMins <= 9 * 60 ? 0.5 : (totalMins <= 10 * 60 ? 0.2 : 0);
+        const oldPts = Number(r.wakePts || 0);
+        const diff = parseFloat((currentPts - oldPts).toFixed(1));
 
-        let currentPts = 0.0;
+        if (diff > 0) addPoints(diff);
+        else if (diff < 0) deductPoints(Math.abs(diff));
 
-        // 判定門檻：09:00 前 +0.5, 10:00 前 +0.2
-        if (totalMins <= 9 * 60) {
-            currentPts = 0.5;
-        } else if (totalMins <= 10 * 60) {
-            currentPts = 0.2;
-        } else {
-            currentPts = 0.0;
-        }
-
-        const diff = parseFloat((currentPts - prevWakePts).toFixed(1));
-        if (diff !== 0) {
-            if (diff > 0) {
-                addPoints(diff);
-                if (currentPts === 0.5) alert(`☀️ 早起達人！早上 09:00 前起床（時間：${wakeVal}），核發 +${diff} 點獎勵！`);
-                else if (currentPts === 0.2) alert(`⛅ 表現不錯！早上 10:00 前起床（時間：${wakeVal}），核發 +${diff} 點獎勵！`);
-            } else {
-                deductPoints(Math.abs(diff));
-                alert(`⚠️ 起床時間延後至 ${wakeVal}，已自動調降/補回 ${Math.abs(diff)} 點！`);
-            }
-        }
-
+        r.wake = wakeVal;
+        r.wakePts = currentPts;
         prevWakePts = currentPts;
-        saveHabits();
+        saveRoutineData();
+
+        if (diff > 0) alert(`☀️ 今天起床時間 ${wakeVal}，獲得 +${diff.toFixed(1)} 點！`);
     }
 
     function evaluateSleepTime(inputEl) {
-        runWithAuth(() => {
-            processSleepTimeLogic();
-        }, () => {
-            inputEl.value = tempOldValue;
-        });
+        runWithAuth(() => processSleepTimeLogic(), () => { inputEl.value = tempOldValue; });
     }
 
     function processSleepTimeLogic() {
+        const r = getRoutine(selectedDateStr);
         const sleepVal = document.getElementById('sleep-time').value;
         if (!sleepVal) return;
-
         const [hrs, mins] = sleepVal.split(':').map(Number);
         const totalMins = hrs * 60 + mins;
+        let currentPts = 0;
+        // 00:00 以前視為 24:00 前；00:00~01:00 為 +0.2
+        if (totalMins === 0 || (totalMins >= 12 * 60 && totalMins <= 23 * 60 + 59)) currentPts = 0.5;
+        else if (totalMins <= 60) currentPts = 0.2;
 
-        let currentPts = 0.0;
+        const oldPts = Number(r.sleepPts || 0);
+        const diff = parseFloat((currentPts - oldPts).toFixed(1));
+        if (diff > 0) addPoints(diff);
+        else if (diff < 0) deductPoints(Math.abs(diff));
 
-        // 判定門檻：24:00 (00:00) 前 +0.5, 01:00 前 +0.2
-        if (totalMins <= 24 * 60 && totalMins >= 12 * 60) { 
-            currentPts = 0.5;
-        } else if (totalMins <= 1 * 60 || totalMins > 24 * 60) { 
-            currentPts = 0.2;
-        } else {
-            currentPts = 0.0;
-        }
-
-        const diff = parseFloat((currentPts - prevSleepPts).toFixed(1));
-        if (diff !== 0) {
-            if (diff > 0) {
-                addPoints(diff);
-                if (currentPts === 0.5) alert(`🌙 睡眠達人！晚上 24:00 前就寢（時間：${sleepVal}），核發 +${diff} 點獎勵！`);
-                else if (currentPts === 0.2) alert(`🌌 準時就寢！凌晨 01:00 前就寢（時間：${sleepVal}），核發 +${diff} 點獎勵！`);
-            } else {
-                deductPoints(Math.abs(diff));
-                alert(`⚠️ 就寢時間延後至 ${sleepVal}，已自動調降/補回 ${Math.abs(diff)} 點！`);
-            }
-        }
-
+        r.sleep = sleepVal;
+        r.sleepPts = currentPts;
         prevSleepPts = currentPts;
-        saveHabits();
+        saveRoutineData();
+
+        if (diff > 0) alert(`🌙 今天就寢時間 ${sleepVal}，獲得 +${diff.toFixed(1)} 點！`);
+    }
+
+    function saveHabits() {
+        const r = getRoutine(selectedDateStr);
+        r.wake = document.getElementById('wake-time').value;
+        r.sleep = document.getElementById('sleep-time').value;
+        r.water = document.getElementById('water-intake').value;
+        saveRoutineData();
+        saveGymData();
     }
 
     /* 🛠️ 稽核端直接微調點數邏輯 */
@@ -1695,7 +1790,8 @@
                     type: 'Expense',
                     kind: 'Want',
                     deductedPts: item.reqPoints,
-                    isRedeem: true
+                    isRedeem: true,
+                    date: selectedDateStr
                 });
 
                 recalculateFinance();
@@ -1743,157 +1839,134 @@
         localStorage.setItem('gigi_planner_wishlist', JSON.stringify(wishlist));
     }
 
-    /* 💰 記帳理財邏輯 */
+    /* 💰 記帳理財邏輯：每筆帳都有日期；預設只顯示選取日 */
+    function getFinanceDate(item) {
+        return item.date || todayStr; // 舊資料沒有日期時，先歸到今天
+    }
+
+    function toggleFinanceMonthView() {
+        financeMonthView = !financeMonthView;
+        const btn = document.getElementById('finance-month-btn');
+        if (btn) btn.innerText = financeMonthView ? '📅 只看當日' : '📊 查看整個月';
+        recalculateFinance();
+    }
 
     function addOtherIncome() {
         const nameInput = document.getElementById('other-income-name');
         const amountInput = document.getElementById('other-income-amount');
         const name = nameInput.value.trim();
         const amount = parseFloat(amountInput.value);
+        if (!name || isNaN(amount) || amount <= 0) return alert('請輸入其他收入項目與有效金額。');
 
-        if (!name || isNaN(amount) || amount <= 0) {
-            alert('請輸入其他收入項目與有效金額。');
-            return;
-        }
-
-        financeItems.push({
-            id: 'fin-other-' + Date.now(),
-            name: name,
-            amount: amount,
-            type: 'Income',
-            kind: '其他收入'
-        });
-        otherIncomeTotal += amount;
-
-        nameInput.value = '';
-        amountInput.value = '';
-        recalculateFinance();
-        saveFinanceData();
+        financeItems.push({id:'fin-other-'+Date.now(), name, amount, type:'Income', kind:'其他收入', date:selectedDateStr});
+        nameInput.value = ''; amountInput.value = '';
+        recalculateFinance(); saveFinanceData();
     }
 
     function addTutorIncome() {
         const hours = parseFloat(document.getElementById('tutor-hours').value);
         const amount = hours * 1200;
-        
-        tutorIncomeTotal += amount;
-        
-        financeItems.push({
-            id: 'fin-' + Date.now(),
-            name: `家教收入 (${hours} 小時)`,
-            amount: amount,
-            type: 'Income',
-            kind: '家教'
-        });
-
-        recalculateFinance();
-        saveFinanceData();
+        financeItems.push({id:'fin-'+Date.now(), name:`家教收入 (${hours} 小時)`, amount, type:'Income', kind:'家教', date:selectedDateStr});
+        recalculateFinance(); saveFinanceData();
     }
 
     function addExpense() {
         const nameInput = document.getElementById('expense-name');
         const amountInput = document.getElementById('expense-amount');
         const typeSelect = document.getElementById('expense-type');
-
         const name = nameInput.value.trim();
         const amount = parseFloat(amountInput.value);
         const kind = typeSelect.value;
-
         if (!name || isNaN(amount) || amount <= 0) return;
 
         let deductedPts = 0;
-
         if (kind === 'Want') {
             deductedPts = parseFloat((amount / 100).toFixed(1));
             deductPoints(deductedPts);
             alert(`🛒 新增「想要」支出 $${amount}，已自動連動扣除 ${deductedPts} 點獎勵！`);
         }
 
-        financeItems.push({
-            id: 'fin-' + Date.now(),
-            name: name,
-            amount: amount,
-            type: 'Expense',
-            kind: kind,
-            deductedPts: deductedPts,
-            isRedeem: false
-        });
-
-        nameInput.value = '';
-        amountInput.value = '';
-
-        recalculateFinance();
-        saveFinanceData();
+        financeItems.push({id:'fin-'+Date.now(), name, amount, type:'Expense', kind, deductedPts, isRedeem:false, date:selectedDateStr});
+        nameInput.value = ''; amountInput.value = '';
+        recalculateFinance(); saveFinanceData();
     }
 
     function deleteFinanceItem(id) {
         const item = financeItems.find(i => i.id === id);
-        if (item) {
-            if (item.deductedPts && item.deductedPts > 0) {
-                addPoints(item.deductedPts);
-                alert(`ℹ️ 已刪除記帳「${item.name}」，並補回 ${item.deductedPts} 點點數！`);
-            }
-        }
+        if (item && item.deductedPts > 0) addPoints(item.deductedPts);
         financeItems = financeItems.filter(item => item.id !== id);
-        recalculateFinance();
-        saveFinanceData();
+        recalculateFinance(); saveFinanceData();
+    }
+
+    function monthKeyFromDate(dateStr) {
+        return (dateStr || todayStr).slice(0,7);
     }
 
     function recalculateFinance() {
-        let currentTutorIncome = 0;
-        let currentOtherIncome = 0;
-        let wantSpent = 0;
+        // 舊版本沒有 date 的資料自動視為今天，之後新增的全部有日期
+        financeItems.forEach(i => { if (!i.date) i.date = todayStr; });
+
+        const visible = financeMonthView
+            ? financeItems.filter(i => monthKeyFromDate(getFinanceDate(i)) === monthKeyFromDate(selectedDateStr))
+            : financeItems.filter(i => getFinanceDate(i) === selectedDateStr);
+
+        // 頂端摘要維持「本月收入」與「本週想要」的原本意義
+        const monthItems = financeItems.filter(i => monthKeyFromDate(getFinanceDate(i)) === monthKeyFromDate(selectedDateStr));
+        let currentTutorIncome = 0, currentOtherIncome = 0;
+        monthItems.forEach(item => {
+            if (item.type === 'Income') {
+                if (item.kind === '家教') currentTutorIncome += Number(item.amount || 0);
+                if (item.kind === '其他收入') currentOtherIncome += Number(item.amount || 0);
+            }
+        });
 
         const listContainer = document.getElementById('finance-list');
         listContainer.innerHTML = '';
 
-        financeItems.forEach(item => {
-            if (item.type === 'Income') {
-                if (item.kind === '家教') currentTutorIncome += item.amount;
-                if (item.kind === '其他收入') currentOtherIncome += item.amount;
-            } else if (item.type === 'Expense' && item.kind === 'Want') {
-                wantSpent += item.amount;
-            }
-
+        // 月視圖時依日期排序；單日視圖則只顯示選取日
+        visible.slice().sort((a,b) => (getFinanceDate(a)+a.id).localeCompare(getFinanceDate(b)+b.id)).forEach(item => {
             const li = document.createElement('li');
             li.className = 'item';
-            
-            let tagHTML = item.type === 'Income' 
-                ? `<span class="badge-tag" style="background:#c8e6c9; color:#2e7d32;">收入</span>`
+            const dateBadge = financeMonthView ? `<span class="badge-tag">${getFinanceDate(item)}</span>` : '';
+            const tagHTML = item.type === 'Income'
+                ? `<span class="badge-tag" style="background:#c8e6c9;color:#2e7d32;">收入</span>`
                 : (item.kind === 'Need' ? `<span class="badge-tag">需要</span>` : `<span class="badge-tag badge-want">想要 (${item.deductedPts || 0}點)</span>`);
-
             li.innerHTML = `
-                <div class="item-left">
-                    ${tagHTML}
-                    <span>${item.name}</span>
-                </div>
+                <div class="item-left">${dateBadge}${tagHTML}<span>${item.name}</span></div>
                 <div>
-                    <span style="font-weight:bold; color:${item.type === 'Income' ? '#2e7d32' : 'var(--pink-dark)'};">
-                        ${item.type === 'Income' ? '+' : '-'}$${item.amount.toLocaleString()}
+                    <span style="font-weight:bold;color:${item.type === 'Income' ? '#2e7d32' : 'var(--pink-dark)'};">
+                        ${item.type === 'Income' ? '+' : '-'}$${Number(item.amount).toLocaleString()}
                     </span>
                     <button class="btn-del" onclick="deleteFinanceItem('${item.id}')">✕</button>
-                </div>
-            `;
+                </div>`;
             listContainer.appendChild(li);
         });
 
-        tutorIncomeTotal = currentTutorIncome;
-        otherIncomeTotal = currentOtherIncome;
+        // 「想要」預算仍以選取日期所在週計算
+        const weekStart = getWeekStartStr(selectedDateStr);
+        const weekExpenses = financeItems.filter(i =>
+            getFinanceDate(i) >= weekStart &&
+            getFinanceDate(i) <= addDaysStr(weekStart,6) &&
+            i.type === 'Expense'
+        );
+        const weekWantSpent = weekExpenses.filter(i => i.kind === 'Want')
+            .reduce((s,i)=>s+Number(i.amount||0),0);
+        const weekNeedSpent = weekExpenses.filter(i => i.kind === 'Need')
+            .reduce((s,i)=>s+Number(i.amount||0),0);
+        const weekTotalSpent = weekExpenses
+            .reduce((s,i)=>s+Number(i.amount||0),0);
 
-        // 本月累積收入 = 基本收入 + 家教收入 + 其他收入
-        const totalIncome = baseIncome + tutorIncomeTotal + otherIncomeTotal;
-
+        const totalIncome = baseIncome + currentTutorIncome + currentOtherIncome;
         document.getElementById('total-income-txt').innerText = `$${totalIncome.toLocaleString()}`;
-        document.getElementById('want-spent-txt').innerText = `$${wantSpent.toLocaleString()}`;
-
+        document.getElementById('want-spent-txt').innerText = `$${weekWantSpent.toLocaleString()}`;
+        document.getElementById('need-spent-txt').innerText = `$${weekNeedSpent.toLocaleString()}`;
+        document.getElementById('total-spent-txt').innerText = `$${weekTotalSpent.toLocaleString()}`;
         const alertBox = document.getElementById('want-alert');
         const wantLimitTxt = document.getElementById('want-limit-txt');
-
-        if (wantSpent > BASE_WEEKLY_WANT_LIMIT) {
-            const overflow = wantSpent - BASE_WEEKLY_WANT_LIMIT;
-            const nextWeekLimit = Math.max(0, BASE_WEEKLY_WANT_LIMIT - overflow);
-            
+        if (weekWantSpent > BASE_WEEKLY_WANT_LIMIT) {
+            const overflow = weekWantSpent - BASE_WEEKLY_WANT_LIMIT;
             alertBox.style.display = 'block';
-            alertBox.innerHTML = `⚠️ <b>「想要」超額提醒：</b>本週已超額 $${overflow.toLocaleString()}！下週可用額度調整為 <b>$${nextWeekLimit.toLocaleString()}</b>。`;
+            alertBox.innerHTML = `⚠️ <b>「想要」超額提醒：</b>本週已超額 $${overflow.toLocaleString()}！`;
             wantLimitTxt.innerText = `$${BASE_WEEKLY_WANT_LIMIT.toLocaleString()} (超額)`;
             wantLimitTxt.style.color = 'var(--alert-red)';
         } else {
@@ -1901,82 +1974,143 @@
             wantLimitTxt.innerText = `$${BASE_WEEKLY_WANT_LIMIT.toLocaleString()}`;
             wantLimitTxt.style.color = 'var(--pink-dark)';
         }
+
+        const label = document.getElementById('finance-date-label');
+        if (label) label.innerText = financeMonthView ? `${monthKeyFromDate(selectedDateStr)} 整月` : `${selectedDateStr}${selectedDateStr===todayStr?'（今天）':''}`;
     }
 
     function saveFinanceData() {
         localStorage.setItem('neo_pink_planner_finance', JSON.stringify(financeItems));
-        tutorIncomeTotal = financeItems.filter(i => i.type === 'Income' && i.kind === '家教')
-            .reduce((s, i) => s + Number(i.amount || 0), 0);
-        otherIncomeTotal = financeItems.filter(i => i.type === 'Income' && i.kind === '其他收入')
-            .reduce((s, i) => s + Number(i.amount || 0), 0);
+        tutorIncomeTotal = financeItems.filter(i=>i.type==='Income' && i.kind==='家教').reduce((s,i)=>s+Number(i.amount||0),0);
+        otherIncomeTotal = financeItems.filter(i=>i.type==='Income' && i.kind==='其他收入').reduce((s,i)=>s+Number(i.amount||0),0);
     }
 
-    /* 📅 月曆與選取日期 */
-    function renderCalendar() {
-        const year = todayObj.getFullYear();
-        const month = todayObj.getMonth();
+    /* 📅 無限月曆與選取日期 */
+    function addDaysStr(dateStr, days) {
+        const d = new Date(dateStr + 'T12:00:00');
+        d.setDate(d.getDate() + days);
+        return formatDateStr(d.getFullYear(), d.getMonth()+1, d.getDate());
+    }
 
+    function getWeekStartStr(dateStr) {
+        const d = new Date(dateStr + 'T12:00:00');
+        const day = d.getDay(); // 0=日
+        d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); // 週一開始
+        return formatDateStr(d.getFullYear(), d.getMonth()+1, d.getDate());
+    }
+
+    function changeCalendarMonth(delta) {
+        calendarViewMonth += delta;
+        if (calendarViewMonth < 0) { calendarViewMonth = 11; calendarViewYear--; }
+        if (calendarViewMonth > 11) { calendarViewMonth = 0; calendarViewYear++; }
+        renderCalendar();
+    }
+
+    function goCalendarToday() {
+        calendarViewYear = todayObj.getFullYear();
+        calendarViewMonth = todayObj.getMonth();
+        selectDate(todayStr);
+    }
+
+    function renderCalendar() {
+        const year = calendarViewYear;
+        const month = calendarViewMonth;
         document.getElementById('month-title').innerText = `${year} 年 ${month + 1} 月`;
 
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-
         const calContainer = document.getElementById('cal-dates');
         calContainer.innerHTML = '';
 
-        for (let i = 0; i < firstDay; i++) {
-            calContainer.appendChild(document.createElement('div'));
-        }
+        for (let i=0; i<firstDay; i++) calContainer.appendChild(document.createElement('div'));
 
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = formatDateStr(year, month + 1, day);
+        for (let day=1; day<=daysInMonth; day++) {
+            const dateStr = formatDateStr(year, month+1, day);
             const dateCell = document.createElement('div');
             dateCell.className = 'cal-date';
-
             if (dateStr === todayStr) dateCell.classList.add('today');
             if (dateStr === selectedDateStr) dateCell.classList.add('selected');
-
-            if (dateTasks[dateStr] && dateTasks[dateStr].length > 0) {
-                dateCell.classList.add('has-task');
-            }
-
+            if ((dateTasks[dateStr]||[]).length > 0) dateCell.classList.add('has-task');
             dateCell.innerText = day;
             dateCell.onclick = () => selectDate(dateStr);
-
             calContainer.appendChild(dateCell);
         }
     }
 
     function selectDate(dateStr) {
         selectedDateStr = dateStr;
+        const d = new Date(dateStr + 'T12:00:00');
+        calendarViewYear = d.getFullYear();
+        calendarViewMonth = d.getMonth();
+        financeMonthView = false;
+        const btn = document.getElementById('finance-month-btn');
+        if (btn) btn.innerText = '📊 查看整個月';
+
+        loadRoutineForDate(dateStr);
+        loadGymForDate(dateStr);
         renderCalendar();
         renderWeekStrip();
         renderDateTasks();
+        renderDailyPlans();
+        recalculateFinance();
+        // 上方月曆／週曆選到任何日期時，課表同步切換到該日期所在的週。
+        renderTimetable();
+        showBirthdayEasterEgg(dateStr);
+    }
+
+    function closeBirthdayModal() {
+        document.getElementById('birthday-modal').style.display = 'none';
+    }
+
+    function showBirthdayEasterEgg(dateStr) {
+        const mmdd = dateStr.slice(5);
+        if (mmdd !== '08-25' && mmdd !== '09-17') return;
+
+        const isGigi = mmdd === '08-25';
+        const title = document.getElementById('birthday-title');
+        const message = document.getElementById('birthday-message');
+        const emoji = document.getElementById('birthday-emoji');
+        const sparkles = document.getElementById('birthday-sparkles');
+
+        if (isGigi) {
+            emoji.textContent = '🎂🩷';
+            title.textContent = '🎀 Gigi 生日特殊企劃！';
+            message.innerHTML = '今天是 <b>8 月 25 日</b>！<br>願今天的每一個小目標，都變成送給自己的小禮物。<br><br>✨ 生日快樂！今天也要把自己照顧得漂漂亮亮的 ✨';
+        } else {
+            emoji.textContent = '🎂💙';
+            title.textContent = '🎉 Aug 生日特殊企劃！';
+            message.innerHTML = '今天是 <b>9 月 17 日</b>，Aug 的生日！<br>祝 Aug 生日快樂、每天都順順利利！<br><br>💌 今天的任務：記得送上一句最真心的生日祝福！';
+        }
+
+        const symbols = isGigi ? ['🎀','🩷','✨','🌸','🎂'] : ['🎈','💙','✨','🎉','🎂'];
+        sparkles.innerHTML = '';
+        for (let i = 0; i < 18; i++) {
+            const span = document.createElement('span');
+            span.textContent = symbols[i % symbols.length];
+            span.style.position = 'absolute';
+            span.style.left = `${5 + Math.random()*90}%`;
+            span.style.top = `${5 + Math.random()*85}%`;
+            span.style.transform = `rotate(${Math.random()*40-20}deg)`;
+            sparkles.appendChild(span);
+        }
+        document.getElementById('birthday-modal').style.display = 'flex';
     }
 
     function renderWeekStrip() {
-        const currentDay = todayObj.getDay(); 
+        const current = new Date(selectedDateStr + 'T12:00:00');
+        const currentDay = current.getDay();
         const weekContainer = document.getElementById('week-strip');
         weekContainer.innerHTML = '';
+        const days = ['日','一','二','三','四','五','六'];
 
-        const days = ['日', '一', '二', '三', '四', '五', '六'];
-        
-        for (let i = 0; i < 7; i++) {
-            const date = new Date(todayObj);
-            date.setDate(todayObj.getDate() - currentDay + i);
-
-            const dateStr = formatDateStr(date.getFullYear(), date.getMonth() + 1, date.getDate());
-
+        for (let i=0;i<7;i++) {
+            const date = new Date(current);
+            date.setDate(current.getDate() - currentDay + i);
+            const dateStr = formatDateStr(date.getFullYear(),date.getMonth()+1,date.getDate());
             const dayDiv = document.createElement('div');
-            dayDiv.className = 'week-day';
-            if (dateStr === selectedDateStr) dayDiv.classList.add('active');
-
+            dayDiv.className = 'week-day' + (dateStr===selectedDateStr ? ' active' : '');
             dayDiv.onclick = () => selectDate(dateStr);
-
-            dayDiv.innerHTML = `
-                <div style="font-size:0.7rem; color:var(--text-sub);">${days[i]}</div>
-                <div style="font-size:0.9rem; font-weight:bold; margin-top:2px;">${date.getDate()}</div>
-            `;
+            dayDiv.innerHTML = `<div style="font-size:.7rem;color:var(--text-sub);">${days[i]}</div><div style="font-size:.9rem;font-weight:bold;margin-top:2px;">${date.getDate()}</div>`;
             weekContainer.appendChild(dayDiv);
         }
     }
@@ -2128,106 +2262,156 @@
         });
     }
 
-    /* 🏃‍♀️ 健身打卡與加點邏輯 */
+    /* 🏃‍♀️ 健身房：以「週」為單位自動重置；其他運動以「日」為單位 */
+    function getGymWeek(dateStr = selectedDateStr) {
+        const key = getWeekStartStr(dateStr);
+        if (!gymByWeek[key]) gymByWeek[key] = {count:0, bonus:false};
+        return gymByWeek[key];
+    }
+
+    function loadGymForDate(dateStr) {
+        const g = getGymWeek(dateStr);
+        gymCount = Number(g.count || 0);
+        gymBonusAwardedThisWeek = !!g.bonus;
+        renderGymUI();
+    }
+
+    function saveGymData() {
+        const g = getGymWeek(selectedDateStr);
+        g.count = gymCount;
+        g.bonus = gymBonusAwardedThisWeek;
+        localStorage.setItem('gigi_planner_gym_by_week', JSON.stringify(gymByWeek));
+    }
+
     function updateGymCount(change) {
         runWithAuth(() => {
+            const g = getGymWeek(selectedDateStr);
             const prevCount = gymCount;
             gymCount = Math.max(0, Math.min(3, gymCount + change));
 
-            if (gymCount === 3 && !gymBonusAwardedThisWeek) {
+            if (gymCount === 3 && !g.bonus) {
+                g.bonus = true;
                 gymBonusAwardedThisWeek = true;
                 addPoints(2.0);
-                alert('🎉 恭喜！本週完成健身房 3 次目標，獲得額外獎勵 +2.0 點！🏋️‍♀️');
-            } else if (prevCount === 3 && gymCount < 3 && gymBonusAwardedThisWeek) {
+                alert('🎉 本週完成健身房 3 次目標，獲得 +2.0 點！🏋️‍♀️');
+            } else if (prevCount === 3 && gymCount < 3 && g.bonus) {
+                g.bonus = false;
                 gymBonusAwardedThisWeek = false;
                 deductPoints(2.0);
             }
-
+            g.count = gymCount;
             renderGymUI();
-            saveHabits();
+            saveGymData();
         });
     }
 
     function resetGymCount() {
         runWithAuth(() => {
-            if (gymCount === 3 && gymBonusAwardedThisWeek) {
-                gymBonusAwardedThisWeek = false;
-                deductPoints(2.0);
-            }
-            gymCount = 0;
-            renderGymUI();
-            saveHabits();
+            const g = getGymWeek(selectedDateStr);
+            if (g.count === 3 && g.bonus) deductPoints(2.0);
+            g.count = 0; g.bonus = false;
+            gymCount = 0; gymBonusAwardedThisWeek = false;
+            renderGymUI(); saveGymData();
         });
     }
 
     function renderGymUI() {
         document.getElementById('gym-count-text').innerText = `${gymCount} / 3 次`;
-        const percentage = (gymCount / 3) * 100;
-        document.getElementById('gym-progress').style.width = `${percentage}%`;
+        document.getElementById('gym-progress').style.width = `${(gymCount/3)*100}%`;
     }
 
-    /* 自訂任務 */
+    function getDailyPlan(dateStr = selectedDateStr) {
+        if (!dailyPlans[dateStr]) dailyPlans[dateStr] = {study:[], sport:[]};
+        if (!Array.isArray(dailyPlans[dateStr].study)) dailyPlans[dateStr].study = [];
+        if (!Array.isArray(dailyPlans[dateStr].sport)) dailyPlans[dateStr].sport = [];
+        return dailyPlans[dateStr];
+    }
+
+    function renderDailyPlans() {
+        const plan = getDailyPlan(selectedDateStr);
+        const studyList = document.getElementById('study-list');
+        const sportList = document.getElementById('sport-list');
+        studyList.innerHTML = '';
+        sportList.innerHTML = '';
+
+        const dateLabel = selectedDateStr === todayStr ? '今天' : selectedDateStr;
+        document.getElementById('study-date-label').innerText = dateLabel;
+        document.getElementById('sport-date-label').innerText = dateLabel;
+
+        renderPlanItems(studyList, plan.study, '讀書');
+        renderPlanItems(sportList, plan.sport, '運動');
+
+        // 每天都保留固定的核心運動；完成狀態也是每日獨立
+        if (!plan.sport.some(x => x.id === 'sport-core')) {
+            plan.sport.unshift({id:'sport-core', text:'練核心 10 分鐘', pts:0.2, checked:false, fixed:true});
+        }
+        // 若剛建立固定項，重新繪製
+        if (!sportList.querySelector('[data-id="sport-core"]')) renderPlanItems(sportList, plan.sport, '運動');
+    }
+
+    function renderPlanItems(list, items, tagText) {
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'item' + (item.checked ? ' completed' : '');
+            li.dataset.id = item.id;
+            li.dataset.pts = item.pts || 0.5;
+            li.innerHTML = `
+                <div class="item-left">
+                    <input type="checkbox" ${item.checked?'checked':''} onchange="togglePointTask(this, ${Number(item.pts||0.5)})">
+                    ${tagText ? `<span class="badge-tag">${tagText}</span>` : ''}
+                    <span class="badge-tag badge-pts">+${Number(item.pts||0.5)}點</span>
+                    <span>${item.text}</span>
+                </div>
+                ${item.fixed ? '' : `<button class="btn-del" onclick="deletePointTask(this)">✕</button>`}`;
+            list.appendChild(li);
+        });
+    }
+
+    function saveDailyPlans() {
+        localStorage.setItem('gigi_planner_daily_plans', JSON.stringify(dailyPlans));
+    }
+
     function addCustomTask(inputId, listId, diffId, tagText) {
         const input = document.getElementById(inputId);
         const diffSel = document.getElementById(diffId);
-
         const text = input.value.trim();
         const pts = parseFloat(diffSel.value);
-
         if (!text) return;
 
-        const list = document.getElementById(listId);
-        const itemId = 'item-' + Date.now();
-
-        const li = document.createElement('li');
-        li.className = 'item';
-        li.setAttribute('data-id', itemId);
-        li.setAttribute('data-pts', pts);
-
-        li.innerHTML = `
-            <div class="item-left">
-                <input type="checkbox" onchange="togglePointTask(this, ${pts})">
-                ${tagText ? `<span class="badge-tag">${tagText}</span>` : ''}
-                <span class="badge-tag badge-pts">+${pts}點</span>
-                <span>${text}</span>
-            </div>
-            <button class="btn-del" onclick="deletePointTask(this)">✕</button>
-        `;
-
-        list.appendChild(li);
+        const plan = getDailyPlan(selectedDateStr);
+        const type = listId === 'study-list' ? 'study' : 'sport';
+        plan[type].push({id:'item-'+Date.now(), text, pts, checked:false});
         input.value = '';
-        saveAllLists();
+        saveDailyPlans();
+        renderDailyPlans();
     }
 
     function togglePointTask(checkbox, pts) {
         const isNowChecked = checkbox.checked;
         runWithAuth(() => {
-            checkbox.checked = isNowChecked;
             const item = checkbox.closest('.item');
-            if (isNowChecked) {
-                item.classList.add('completed');
-                addPoints(pts);
-            } else {
-                item.classList.remove('completed');
-                deductPoints(pts);
-            }
-            saveAllLists();
-        }, () => {
-            checkbox.checked = !isNowChecked;
-        });
+            const id = item.dataset.id;
+            const type = item.closest('#study-list') ? 'study' : 'sport';
+            const plan = getDailyPlan(selectedDateStr);
+            const task = plan[type].find(x => x.id === id);
+            if (!task) return;
+            task.checked = isNowChecked;
+            if (isNowChecked) { item.classList.add('completed'); addPoints(pts); }
+            else { item.classList.remove('completed'); deductPoints(pts); }
+            saveDailyPlans();
+        }, () => { checkbox.checked = !isNowChecked; });
     }
 
     function deletePointTask(btn) {
         const item = btn.closest('.item');
-        const cb = item.querySelector('input[type="checkbox"]');
-        const pts = parseFloat(item.getAttribute('data-pts') || 0);
-
-        if (cb && cb.checked) {
-            deductPoints(pts);
-        }
-
-        item.remove();
-        saveAllLists();
+        const id = item.dataset.id;
+        const type = item.closest('#study-list') ? 'study' : 'sport';
+        const plan = getDailyPlan(selectedDateStr);
+        const task = plan[type].find(x=>x.id===id);
+        if (task && task.checked) deductPoints(Number(task.pts||0));
+        plan[type] = plan[type].filter(x=>x.id!==id);
+        saveDailyPlans();
+        renderDailyPlans();
     }
 
     /* 🏫 課表繪製與管理 */
@@ -2243,55 +2427,131 @@
         });
     }
 
+    // 課表週次控制：每按一次前/下一週，就把目前課表的基準日期移動 7 天。
+    // 這樣表頭會同步變成下一週的實際日期，例如 8/10~8/14 → 8/17~8/21。
+    function changeScheduleWeek(days) {
+        const base = selectedDateStr || todayStr;
+        const nextDate = addDaysStr(base, days);
+        selectDate(nextDate);
+    }
+
+    function goScheduleThisWeek() {
+        selectDate(todayStr);
+    }
+
     function renderTimetable() {
         const tbody = document.getElementById('timetable-body');
+        const table = document.querySelector('.timetable');
         tbody.innerHTML = '';
+
+        // 以目前選取日期所在的「週一～週五」作為課表日期。
+        // 例如選到 8/10（週一），表頭就是：週一 8/10、週二 8/11……；
+        // 切換到下一週後，日期會自動變成下一週的日期。
+        const displayDate = selectedDateStr || todayStr;
+        const weekStart = getWeekStartStr(displayDate);
+        const weekDates = [];
+        for (let day = 0; day < 5; day++) {
+            weekDates.push(addDaysStr(weekStart, day));
+        }
+
+        const weekdayLabels = ['週一', '週二', '週三', '週四', '週五'];
+        const theadRow = table?.querySelector('thead tr');
+        if (theadRow) {
+            theadRow.innerHTML = '<th class="time-col">節次 / 時間</th>' +
+                weekDates.map((dateStr, i) => {
+                    const isSelected = dateStr === displayDate;
+                    const dateObj = new Date(dateStr + 'T12:00:00');
+                    const dateText = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+                    return `<th style="${isSelected ? 'background:var(--pink-primary); color:white;' : ''}">` +
+                        `<div>${weekdayLabels[i]}</div>` +
+                        `<div style="font-size:0.72rem; font-weight:normal; margin-top:2px;">${dateText}</div>` +
+                    `</th>`;
+                }).join('');
+        }
+
+        const title = document.querySelector('.timetable')?.closest('.card')?.querySelector('.card-title');
+        if (title) {
+            const first = weekDates[0].slice(5).replace('-', '/');
+            const last = weekDates[4].slice(5).replace('-', '/');
+            title.innerHTML = `🏫 大學課表 <span class="badge-tag" style="margin-left:6px;">${first}～${last}</span>`;
+        }
 
         periods.forEach(p => {
             const tr = document.createElement('tr');
-            
             tr.innerHTML = `
                 <td class="time-col">
                     <div style="font-weight:bold;">${p.label}</div>
                     <div style="font-size:0.68rem; color:#a08088;">${p.time.replace(' - ', '<br>')}</div>
-                </td>
-            `;
+                </td>`;
 
             for (let day = 1; day <= 5; day++) {
-                const activeCourse = courses.find(c => c.day === day && p.id >= c.start && p.id <= c.end);
+                const columnDate = weekDates[day - 1];
+                const activeCourse = courses.find(c => {
+                    if (!(p.id >= c.start && p.id <= c.end)) return false;
+                    // 有指定日期的課程，只出現在那一天；沒有指定日期則依星期循環。
+                    if (c.date) return c.date === columnDate;
+                    return c.day === day;
+                });
+
+                const td = document.createElement('td');
+                td.style.padding = '3px';
 
                 if (activeCourse) {
-                    if (p.id === activeCourse.start) {
-                        const rowSpan = activeCourse.end - activeCourse.start + 1;
-                        const td = document.createElement('td');
-                        td.rowSpan = rowSpan;
-                        td.style.padding = '3px';
-
-                        td.innerHTML = `
-                            <div class="course-card" style="background-color: ${activeCourse.color || '#f8bbd0'};" onclick="editCourse('${activeCourse.id}')">
-                                <div>${activeCourse.name}</div>
-                                <div style="font-size:0.68rem; opacity:0.8; font-weight:normal; margin-top:2px;">
-                                    ${activeCourse.start === activeCourse.end ? `${activeCourse.start}節` : `${activeCourse.start}~${activeCourse.end}節`}
-                                </div>
+                    const done = hasCourseAttendance(activeCourse.id, p.id, columnDate);
+                    const coursePts = Number.isFinite(Number(activeCourse.pts)) ? Number(activeCourse.pts) : 0.2;
+                    td.innerHTML = `
+                        <div class="course-card" style="background-color: ${activeCourse.color || '#f8bbd0'};" onclick="editCourse('${activeCourse.id}')">
+                            <div>${activeCourse.name}</div>
+                            <div style="font-size:0.68rem; opacity:0.8; font-weight:normal; margin-top:2px;">
+                                ${activeCourse.date ? `📅 ${activeCourse.date}` : `每週${['','一','二','三','四','五'][activeCourse.day]}`} · 第${p.id}節
                             </div>
-                        `;
-                        tr.appendChild(td);
-                    }
-                } else {
-                    tr.appendChild(document.createElement('td'));
+                            <button class="course-attendance-btn ${done ? 'done' : ''}" onclick="event.stopPropagation(); markCourseAttendance('${activeCourse.id}', ${p.id}, '${columnDate}')">
+                                ${done ? `✓ ${columnDate} 第${p.id}節已上課` : `🎓 第${p.id}節 +${coursePts} 點`}
+                            </button>
+                        </div>`;
                 }
+                tr.appendChild(td);
             }
-
             tbody.appendChild(tr);
+        });
+    }
+
+    /* 🎓 課表上課打卡：每一節每週獨立計算；每節點數可由審核端自訂，預設 0.2 */
+    function getAttendanceWeek(dateStr = todayStr) {
+        const key = getWeekStartStr(dateStr);
+        if (!courseAttendance[key]) courseAttendance[key] = {};
+        return courseAttendance[key];
+    }
+
+    function hasCourseAttendance(courseId, periodId, dateStr = todayStr) {
+        const week = getAttendanceWeek(dateStr);
+        return !!(week[courseId] && week[courseId][periodId]);
+    }
+
+    function markCourseAttendance(courseId, periodId, dateStr = todayStr) {
+        runWithAuth(() => {
+            const week = getAttendanceWeek(dateStr);
+            if (!week[courseId]) week[courseId] = {};
+            if (week[courseId][periodId]) {
+                alert(`第 ${periodId} 節本週已經打過卡了，不會重複加點。`);
+                return;
+            }
+            week[courseId][periodId] = true;
+            const course = courses.find(c => c.id === courseId);
+            const pts = course && Number.isFinite(Number(course.pts)) ? Number(course.pts) : 0.2;
+            addPoints(pts);
+            localStorage.setItem('gigi_planner_course_attendance', JSON.stringify(courseAttendance));
+            renderTimetable();
+            alert(`🎓 ${dateStr} 第 ${periodId} 節上課打卡成功！獲得 +${pts} 點。`);
         });
     }
 
     function loadSchedule() {
         const saved = localStorage.getItem('neo_pink_planner_schedule');
         if (saved) {
-            courses = JSON.parse(saved);
+            courses = JSON.parse(saved).map(c => ({ ...c, pts: Number.isFinite(Number(c.pts)) ? Number(c.pts) : 0.2 }));
         } else {
-            courses = [...defaultCourses];
+            courses = [...defaultCourses].map(c => ({ ...c, pts: 0.2 }));
         }
         renderTimetable();
     }
@@ -2303,7 +2563,7 @@
 
     function resetDefaultSchedule() {
         if (confirm('確定要將課表重置為預設課表嗎？')) {
-            courses = [...defaultCourses];
+            courses = [...defaultCourses].map(c => ({ ...c, pts: 0.2 }));
             saveSchedule();
         }
     }
@@ -2313,8 +2573,10 @@
         document.getElementById('modal-title-txt').innerText = '🌸 手動新增課程';
         document.getElementById('modal-c-name').value = '';
         document.getElementById('modal-c-day').value = '1';
+        document.getElementById('modal-c-date').value = '';
         document.getElementById('modal-c-start').value = '1';
         document.getElementById('modal-c-end').value = '1';
+        document.getElementById('modal-c-pts').value = '0.2';
         document.getElementById('btn-delete-course').style.display = 'none';
 
         document.getElementById('course-modal').style.display = 'flex';
@@ -2327,9 +2589,11 @@
         editingCourseId = id;
         document.getElementById('modal-title-txt').innerText = '🌸 編輯 / 刪除課程';
         document.getElementById('modal-c-name').value = c.name;
-        document.getElementById('modal-c-day').value = c.day;
+        document.getElementById('modal-c-day').value = c.day || '1';
+        document.getElementById('modal-c-date').value = c.date || '';
         document.getElementById('modal-c-start').value = c.start;
         document.getElementById('modal-c-end').value = c.end;
+        document.getElementById('modal-c-pts').value = Number.isFinite(Number(c.pts)) ? Number(c.pts) : 0.2;
         document.getElementById('btn-delete-course').style.display = 'inline-block';
 
         document.getElementById('course-modal').style.display = 'flex';
@@ -2342,23 +2606,37 @@
     function saveCourseFromModal() {
         const name = document.getElementById('modal-c-name').value.trim();
         const day = parseInt(document.getElementById('modal-c-day').value);
+        const date = document.getElementById('modal-c-date').value || null;
         const start = parseInt(document.getElementById('modal-c-start').value);
         const end = parseInt(document.getElementById('modal-c-end').value);
+        const ptsRaw = document.getElementById('modal-c-pts').value;
+        const pts = Math.max(0, Number(ptsRaw));
 
-        if (!name || start > end) return;
+        if (!name || start > end || !Number.isFinite(pts)) return;
 
         const colors = ['#f8bbd0', '#e1bee7', '#bbdefb', '#c8e6c9', '#ffe0b2', '#ffcc80', '#b2dfdb', '#f48fb1'];
         const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const existing = editingCourseId ? courses.find(c => c.id === editingCourseId) : null;
+        const oldPts = existing ? (Number.isFinite(Number(existing.pts)) ? Number(existing.pts) : 0.2) : 0.2;
+        const pointsChanged = Math.abs(pts - oldPts) > 1e-9;
 
-        if (editingCourseId) {
-            const idx = courses.findIndex(c => c.id === editingCourseId);
-            if (idx !== -1) courses[idx] = { ...courses[idx], name, day, start, end };
+        const saveNow = () => {
+            if (editingCourseId) {
+                const idx = courses.findIndex(c => c.id === editingCourseId);
+                if (idx !== -1) courses[idx] = { ...courses[idx], name, day, date, start, end, pts };
+            } else {
+                courses.push({ id: 'c-' + Date.now(), name, day, date, start, end, pts, color: randomColor });
+            }
+            saveSchedule();
+            closeCourseModal();
+        };
+
+        // 新課程預設 0.2；只有修改既有課程的每節點數時才需要審核密碼。
+        if (pointsChanged && existing) {
+            runWithAuth(saveNow);
         } else {
-            courses.push({ id: 'c-' + Date.now(), name, day, start, end, color: randomColor });
+            saveNow();
         }
-
-        saveSchedule();
-        closeCourseModal();
     }
 
     function deleteCurrentCourse() {
@@ -2374,6 +2652,9 @@
         try {
             saveAllLists();
             saveHabits();
+            saveDailyPlans();
+            saveGymData();
+            localStorage.setItem('gigi_planner_course_attendance', JSON.stringify(courseAttendance));
             savePointsData();
             saveWishlistData();
             localStorage.setItem('gigi_planner_date_tasks', JSON.stringify(dateTasks));
@@ -2399,20 +2680,11 @@
     function saveAllLists() {
         const data = {
             meds: getListState('med-list'),
-            study: getListState('study-list'),
-            sport: getListState('sport-list')
+            // 讀書／運動改為每日資料，不再把所有日期混在同一份清單
+            dailyPlans: dailyPlans
         };
         localStorage.setItem('neo_pink_planner_data', JSON.stringify(data));
-    }
-
-    function saveHabits() {
-        const habits = {
-            wake: document.getElementById('wake-time').value,
-            sleep: document.getElementById('sleep-time').value,
-            water: document.getElementById('water-intake').value,
-            gymCount: gymCount
-        };
-        localStorage.setItem('neo_pink_planner_habits', JSON.stringify(habits));
+        saveDailyPlans();
     }
 
     function getListState(listId) {
@@ -2437,10 +2709,31 @@
         if (savedPts !== null) totalPoints = parseFloat(savedPts);
 
         medBonusAwardedToday = localStorage.getItem('gigi_planner_med_bonus') === 'true';
-        gymBonusAwardedThisWeek = localStorage.getItem('gigi_planner_gym_bonus') === 'true';
 
-        prevWakePts = parseFloat(localStorage.getItem('gigi_planner_prev_wake_pts') || 0);
-        prevSleepPts = parseFloat(localStorage.getItem('gigi_planner_prev_sleep_pts') || 0);
+        const savedRoutine = localStorage.getItem('gigi_planner_routine_by_date');
+        if (savedRoutine) {
+            try { routineByDate = JSON.parse(savedRoutine) || {}; } catch(e) { routineByDate = {}; }
+        } else {
+            // 相容舊版：把舊的單一作息搬到今天
+            routineByDate[todayStr] = {
+                wake: localStorage.getItem('neo_pink_planner_habits') ? (JSON.parse(localStorage.getItem('neo_pink_planner_habits')).wake || '08:30') : '08:30',
+                sleep: localStorage.getItem('neo_pink_planner_habits') ? (JSON.parse(localStorage.getItem('neo_pink_planner_habits')).sleep || '23:30') : '23:30',
+                water: localStorage.getItem('neo_pink_planner_habits') ? (JSON.parse(localStorage.getItem('neo_pink_planner_habits')).water || '1500 ml') : '1500 ml',
+                wakePts: parseFloat(localStorage.getItem('gigi_planner_prev_wake_pts') || 0),
+                sleepPts: parseFloat(localStorage.getItem('gigi_planner_prev_sleep_pts') || 0)
+            };
+        }
+
+        const savedGym = localStorage.getItem('gigi_planner_gym_by_week');
+        if (savedGym) { try { gymByWeek = JSON.parse(savedGym) || {}; } catch(e) { gymByWeek = {}; } }
+
+        const savedAttendance = localStorage.getItem('gigi_planner_course_attendance');
+        if (savedAttendance) { try { courseAttendance = JSON.parse(savedAttendance) || {}; } catch(e) { courseAttendance = {}; } }
+
+        const savedDailyPlans = localStorage.getItem('gigi_planner_daily_plans');
+        if (savedDailyPlans) {
+            try { dailyPlans = JSON.parse(savedDailyPlans) || {}; } catch(e) { dailyPlans = {}; }
+        }
 
         const savedWishlist = localStorage.getItem('gigi_planner_wishlist');
         if (savedWishlist) wishlist = JSON.parse(savedWishlist);
@@ -2463,21 +2756,18 @@
                     }
                 });
             }
-            loadCustomList('study-list', data.study, '讀書');
-            loadCustomList('sport-list', data.sport, '運動');
-        }
-
-        const savedHabits = localStorage.getItem('neo_pink_planner_habits');
-        if (savedHabits) {
-            const habits = JSON.parse(savedHabits);
-            if (habits.wake) document.getElementById('wake-time').value = habits.wake;
-            if (habits.sleep) document.getElementById('sleep-time').value = habits.sleep;
-            if (habits.water) document.getElementById('water-intake').value = habits.water;
-            if (habits.gymCount !== undefined) {
-                gymCount = habits.gymCount;
-                renderGymUI();
+            if (data.dailyPlans && typeof data.dailyPlans === 'object') {
+                dailyPlans = data.dailyPlans;
+            } else if (!localStorage.getItem('gigi_planner_daily_plans')) {
+                // 相容舊版：舊的讀書／運動清單只搬到今天
+                dailyPlans[todayStr] = {
+                    study: Array.isArray(data.study) ? data.study : [],
+                    sport: Array.isArray(data.sport) ? data.sport : []
+                };
             }
         }
+
+
 
         const savedFinance = localStorage.getItem('neo_pink_planner_finance');
         if (savedFinance) {
