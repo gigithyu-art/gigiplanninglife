@@ -1250,6 +1250,7 @@
     const CLOUD_SYNC_KEYS = [
         'gigi_planner_points',
         'gigi_planner_med_bonus',
+        'gigi_planner_med_by_date',
         'gigi_planner_gym_bonus',
         'gigi_planner_prev_wake_pts',
         'gigi_planner_prev_sleep_pts',
@@ -1347,6 +1348,7 @@
 
     let totalPoints = 0.0;
     let medBonusAwardedToday = false;
+    let medicationByDate = {};
     let gymBonusAwardedThisWeek = false;
 
     // 每天獨立的作息資料
@@ -1421,6 +1423,7 @@
         initModalSelectors();
         loadSchedule();
         loadRoutineForDate(selectedDateStr);
+        loadMedicationForDate(selectedDateStr);
         loadGymForDate(selectedDateStr);
         renderDailyPlans();
         recalculateFinance();
@@ -1505,9 +1508,13 @@
         const [hrs, mins] = sleepVal.split(':').map(Number);
         const totalMins = hrs * 60 + mins;
         let currentPts = 0;
-        // 00:00 以前視為 24:00 前；00:00~01:00 為 +0.2
-        if (totalMins === 0 || (totalMins >= 12 * 60 && totalMins <= 23 * 60 + 59)) currentPts = 0.5;
-        else if (totalMins <= 60) currentPts = 0.2;
+        // 就寢：00:00（午夜整點）仍算 +0.5；01:00（整點）仍算 +0.2
+        // 00:01~00:59 同樣屬於「01:00前」的 +0.2 區間。
+        if (totalMins === 0 || (totalMins >= 12 * 60 && totalMins <= 23 * 60 + 59)) {
+            currentPts = 0.5;
+        } else if (totalMins <= 60) {
+            currentPts = 0.2;
+        }
 
         const oldPts = Number(r.sleepPts || 0);
         const diff = parseFloat((currentPts - oldPts).toFixed(1));
@@ -1721,6 +1728,7 @@
     function savePointsData() {
         localStorage.setItem('gigi_planner_points', totalPoints);
         localStorage.setItem('gigi_planner_med_bonus', medBonusAwardedToday);
+        localStorage.setItem('gigi_planner_med_by_date', JSON.stringify(medicationByDate));
         localStorage.setItem('gigi_planner_gym_bonus', gymBonusAwardedThisWeek);
         localStorage.setItem('gigi_planner_prev_wake_pts', prevWakePts);
         localStorage.setItem('gigi_planner_prev_sleep_pts', prevSleepPts);
@@ -2047,6 +2055,7 @@
         if (btn) btn.innerText = '📊 查看整個月';
 
         loadRoutineForDate(dateStr);
+        loadMedicationForDate(dateStr);
         loadGymForDate(dateStr);
         renderCalendar();
         renderWeekStrip();
@@ -2228,16 +2237,52 @@
         }
     }
 
-    /* 💊 吃藥全天加點邏輯 */
+    /* 💊 吃藥：每天獨立重置，不會把昨天的勾選帶到今天 */
+    function getMedicationState(dateStr = selectedDateStr) {
+        if (!medicationByDate[dateStr]) {
+            medicationByDate[dateStr] = {
+                checked: [false, false, false, false],
+                bonus: false
+            };
+        }
+        if (!Array.isArray(medicationByDate[dateStr].checked)) {
+            medicationByDate[dateStr].checked = [false, false, false, false];
+        }
+        while (medicationByDate[dateStr].checked.length < 4) {
+            medicationByDate[dateStr].checked.push(false);
+        }
+        return medicationByDate[dateStr];
+    }
+
+    function loadMedicationForDate(dateStr = selectedDateStr) {
+        const state = getMedicationState(dateStr);
+        const allMeds = document.querySelectorAll('#med-list input[type="checkbox"]');
+
+        allMeds.forEach((cb, index) => {
+            cb.checked = !!state.checked[index];
+            const li = cb.closest('.item');
+            if (li) li.classList.toggle('completed', cb.checked);
+        });
+
+        medBonusAwardedToday = !!state.bonus;
+        localStorage.setItem('gigi_planner_med_bonus', medBonusAwardedToday);
+        saveMedicationData();
+    }
+
+    function saveMedicationData() {
+        localStorage.setItem('gigi_planner_med_by_date', JSON.stringify(medicationByDate));
+        localStorage.setItem('gigi_planner_med_bonus', medBonusAwardedToday);
+    }
+
     function checkMedicationCompletion(checkbox) {
         const isNowChecked = checkbox.checked;
         runWithAuth(() => {
-            checkbox.checked = isNowChecked;
-            
+            const state = getMedicationState(selectedDateStr);
             const allMeds = document.querySelectorAll('#med-list input[type="checkbox"]');
             let allChecked = true;
 
-            allMeds.forEach(cb => {
+            allMeds.forEach((cb, index) => {
+                state.checked[index] = !!cb.checked;
                 const li = cb.closest('.item');
                 if (cb.checked) {
                     li.classList.add('completed');
@@ -2247,15 +2292,22 @@
                 }
             });
 
-            if (allChecked && !medBonusAwardedToday) {
+            const wasBonus = !!state.bonus;
+
+            if (allChecked && !wasBonus) {
+                state.bonus = true;
                 medBonusAwardedToday = true;
                 addPoints(0.5);
                 alert('🌸 太棒了！今天已按時吃完所有藥物，獲得獎勵點數 +0.5 點！✨');
-            } else if (!allChecked && medBonusAwardedToday) {
+            } else if (!allChecked && wasBonus) {
+                state.bonus = false;
                 medBonusAwardedToday = false;
                 deductPoints(0.5);
+            } else {
+                medBonusAwardedToday = !!state.bonus;
             }
 
+            saveMedicationData();
             saveAllLists();
         }, () => {
             checkbox.checked = !isNowChecked;
@@ -2678,9 +2730,16 @@
         }
     }
     function saveAllLists() {
+        // 吃藥改成按日期保存；neo_pink_planner_data 仍保留 meds 供舊版相容
+        const state = getMedicationState(selectedDateStr);
+        document.querySelectorAll('#med-list input[type="checkbox"]').forEach((cb, index) => {
+            state.checked[index] = !!cb.checked;
+        });
+        state.bonus = !!medBonusAwardedToday;
+        saveMedicationData();
+
         const data = {
             meds: getListState('med-list'),
-            // 讀書／運動改為每日資料，不再把所有日期混在同一份清單
             dailyPlans: dailyPlans
         };
         localStorage.setItem('neo_pink_planner_data', JSON.stringify(data));
@@ -2708,7 +2767,25 @@
         const savedPts = localStorage.getItem('gigi_planner_points');
         if (savedPts !== null) totalPoints = parseFloat(savedPts);
 
-        medBonusAwardedToday = localStorage.getItem('gigi_planner_med_bonus') === 'true';
+        // 吃藥紀錄改為「按日期」保存；今天會自動是新的一天，不沿用昨天勾選
+        const savedMedByDate = localStorage.getItem('gigi_planner_med_by_date');
+        if (savedMedByDate) {
+            try { medicationByDate = JSON.parse(savedMedByDate) || {}; } catch(e) { medicationByDate = {}; }
+        } else {
+            // 相容舊版：只把舊版目前狀態搬到今天，之後每天都會使用自己的日期紀錄
+            const savedDataForMed = localStorage.getItem('neo_pink_planner_data');
+            let legacyMeds = [];
+            try {
+                const legacy = savedDataForMed ? JSON.parse(savedDataForMed) : null;
+                legacyMeds = Array.isArray(legacy?.meds) ? legacy.meds : [];
+            } catch(e) {}
+            medicationByDate[todayStr] = {
+                checked: [0,1,2,3].map(i => !!legacyMeds[i]?.checked),
+                bonus: localStorage.getItem('gigi_planner_med_bonus') === 'true'
+            };
+        }
+        medBonusAwardedToday = !!getMedicationState(todayStr).bonus;
+        saveMedicationData();
 
         const savedRoutine = localStorage.getItem('gigi_planner_routine_by_date');
         if (savedRoutine) {
