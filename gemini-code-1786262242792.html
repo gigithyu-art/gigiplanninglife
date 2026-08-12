@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gigi的生活計劃</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #fff0f3 0%, #fde2e4 40%, #ffcad4 100%);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --pink-soft: #fff5f7;
+            --pink-accent: #f4acb7;
+            --pink-primary: #f0718f;
+            --pink-dark: #b54a62;
+            --pink-light-tag: #ffe3e8;
+            --text-main: #5c3a42;
+            --text-sub: #8c6870;
+            --shadow-soft: 0 10px 30px rgba(240, 113, 143, 0.15);
+            --border-glass: 1px solid rgba(255, 255, 255, 0.9);
+            --alert-red: #e53935;
+            --alert-bg: #ffebee;
+            --gold-accent: #ffb300;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            padding: 24px 16px;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .mac-app {
+            width: 100%;
+            max-width: 1280px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: var(--border-glass);
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mac-titlebar {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(240, 113, 143, 0.2);
+        }
+
+        .mac-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .dot-close { background: #ff605c; }
+        .dot-min { background: #ffbd2e; }
+        .dot-max { background: #00ca4e; }
+
+        .app-title {
+            margin-left: 20px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--pink-dark);
+            letter-spacing: 0.5px;
+        }
+
+        .app-body {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        @media (max-width: 960px) {
+            .app-body {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 18px 20px;
+            border: var(--border-glass);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            margin-bottom: 18px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--pink-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Calendar Widget */
+        .calendar-header {
+            font-weight: 700;
+            color: var(--pink-dark);
+            font-size: 0.95rem;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .cal-day-name {
+            font-weight: 600;
+            color: var(--text-sub);
+            padding: 4px 0;
+        }
+
+        .cal-date {
+            padding: 6px 0;
+            border-radius: 8px;
+            color: var(--text-main);
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .cal-date:hover {
+            background: var(--pink-soft);
+        }
+
+        .cal-date.today {
+            border: 2px solid var(--pink-primary);
+            font-weight: bold;
+        }
+
+        .cal-date.selected {
+            background: var(--pink-primary);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(240, 113, 143, 0.4);
+        }
+
+        .cal-date.has-task::after {
+            content: "•";
+            position: absolute;
+            bottom: 1px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--pink-dark);
+            font-size: 12px;
+        }
+
+        .cal-date.selected.has-task::after {
+            color: white;
+        }
+
+        .week-strip {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .week-day {
+            flex: 1;
+            background: var(--pink-soft);
+            border-radius: 10px;
+            padding: 8px 2px;
+            text-align: center;
+            font-size: 0.75rem;
+            border: 1px solid rgba(244, 172, 183, 0.3);
+            cursor: pointer;
+        }
+
+        .week-day.active {
+            background: var(--pink-light-tag);
+            border-color: var(--pink-primary);
+            font-weight: bold;
+            color: var(--pink-dark);
+        }
+
+        /* Points Counter Card */
+        .points-card {
+            background: linear-gradient(135deg, #fff5f7 0%, #ffe3e8 100%);
+            border: 2px solid var(--pink-accent);
+            text-align: center;
+            padding: 16px;
+            border-radius: 18px;
+            margin-bottom: 18px;
+        }
+
+        .points-val {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--pink-primary);
+            margin: 4px 0;
+            text-shadow: 0 2px 4px rgba(240, 113, 143, 0.2);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"], input[type="number"], input[type="time"], select {
+            flex: 1;
+            min-width: 100px;
+            padding: 9px 12px;
+            border: 1.5px solid var(--pink-accent);
+            border-radius: 10px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-main);
+            font-size: 0.88rem;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--pink-primary);
+            box-shadow: 0 0 0 3px rgba(240, 113, 143, 0.2);
+        }
+
+        .btn-pink {
+            background: var(--pink-primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-pink:hover {
+            background: var(--pink-dark);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--pink-dark);
+            border: 1.5px solid var(--pink-accent);
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: var(--pink-light-tag);
+        }
+
+        .item-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--pink-soft);
+            padding: 9px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(244, 172, 183, 0.2);
+            transition: all 0.2s;
+        }
+
+        .item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .badge-tag {
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 8px;
+            background: var(--pink-light-tag);
+            color: var(--pink-dark);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-pts {
+            background: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ffe0b2;
+        }
+
+        .item input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--pink-accent);
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .item input[type="checkbox"]:checked {
+            background-color: var(--pink-primary);
+            border-color: var(--pink-primary);
+        }
+
+        .item input[type="checkbox"]:checked::after {
+            content: "✓";
+            position: absolute;
+            color: white;
+            font-size: 12px;
+            top: -2px;
+            left: 3px;
+            font-weight: bold;
+        }
+
+        .item.completed span {
+            text-decoration: line-through;
+            color: #b598a0;
+        }
+
+        .btn-del {
+            background: none;
+            border: none;
+            color: #e57373;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.6;
+            margin-left: 8px;
+        }
+
+        .btn-del:hover { opacity: 1; }
+
+        .routine-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.88rem;
+        }
+
+        .gym-tracker {
+            background: #fff8f9;
+            border: 1.5px solid var(--pink-accent);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .gym-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--pink-dark);
+        }
+
+        .progress-bar-bg {
+            background: var(--pink-soft);
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(244, 172, 183, 0.4);
+        }
+
+        .progress-bar-fill {
+            background: var(--pink-primary);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .gym-btn-group {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .btn-gym {
+            flex: 1;
+            padding: 4px 0;
+            font-size: 0.78rem;
+            border: 1px solid var(--pink-accent);
+            background: white;
+            color: var(--pink-dark);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-gym:hover {
+            background: var(--pink-light-tag);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+        }
+
+        .med-notice {
+            background: #fff8f9;
+            border-left: 4px solid var(--pink-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            color: var(--pink-dark);
+            margin-bottom: 12px;
+        }
+
+        .finance-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .finance-box {
+            background: #fff8f9;
+            border-radius: 12px;
+            padding: 10px 12px;
+            border: 1px solid rgba(244, 172, 183, 0.3);
+            text-align: center;
+        }
+
+        .finance-title {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        .finance-amount {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--pink-dark);
+        }
+
+        .alert-box {
+            display: none;
+            background: var(--alert-bg);
+            border: 1px solid var(--alert-red);
+            color: var(--alert-red);
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .tutor-box {
+            background: #fff8f9;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 14px;
+            border: 1px solid var(--pink-accent);
+        }
+
+        .timetable-container {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .timetable {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 0.82rem;
+            min-width: 600px;
+        }
+
+        .timetable th, .timetable td {
+            border: 1px solid rgba(244, 172, 183, 0.4);
+            padding: 6px 4px;
+            vertical-align: middle;
+            height: 42px;
+        }
+
+        .timetable th {
+            background: var(--pink-soft);
+            color: var(--pink-dark);
+            font-weight: bold;
+        }
+
+        .time-col {
+            background: rgba(255, 255, 255, 0.6);
+            color: var(--text-sub);
+            font-size: 0.75rem;
+            width: 80px;
+            font-weight: 600;
+        }
+
+        .course-card {
+            background: var(--pink-light-tag);
+            color: var(--pink-dark);
+            border-radius: 8px;
+            padding: 6px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(240, 113, 143, 0.15);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .course-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(240, 113, 143, 0.3);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: var(--shadow-soft);
+            border: var(--border-glass);
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--pink-dark);
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="mac-app">
+    <!-- Window Bar -->
+    <div class="mac-titlebar">
+        <div class="mac-dots">
+            <div class="dot dot-close"></div>
+            <div class="dot dot-min"></div>
+            <div class="dot dot-max"></div>
+        </div>
+        <div class="app-title">🌸 Gigi的生活計劃 (Sweet Pink Personal Planner)</div>
+    </div>
+
+    <!-- App Body -->
+    <div class="app-body">
+
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+
+            <!-- 🌟 累積點數卡片 (Points Counter) -->
+            <div class="points-card">
+                <div style="font-size:0.85rem; font-weight:bold; color:var(--pink-dark);">🌟 目前累積獎勵點數</div>
+                <div class="points-val" id="user-points-display">0.0</div>
+                <div style="font-size:0.72rem; color:var(--text-sub);">達成目標可兌換願望禮物 🎁</div>
+            </div>
+            
+            <!-- 月曆 Calendar Widget -->
+            <div class="card">
+                <div class="calendar-header" id="month-title">2026 年 8 月</div>
+                <div class="cal-grid">
+                    <div class="cal-day-name">日</div>
+                    <div class="cal-day-name">一</div>
+                    <div class="cal-day-name">二</div>
+                    <div class="cal-day-name">三</div>
+                    <div class="cal-day-name">四</div>
+                    <div class="cal-day-name">五</div>
+                    <div class="cal-day-name">六</div>
+                </div>
+                <div class="cal-grid" id="cal-dates"></div>
+            </div>
+
+            <!-- 週曆 Weekly View Widget -->
+            <div class="card">
+                <div class="card-title">🗓 本週總覽</div>
+                <div class="week-strip" id="week-strip"></div>
+            </div>
+
+            <!-- 作息與水份紀錄 -->
+            <div class="card">
+                <div class="card-title">🌙 作息 & 水份</div>
+                <div class="routine-item" style="margin-top: 10px;">
+                    <label>☀️ 起床時間</label>
+                    <input type="time" id="wake-time" value="07:30" style="max-width: 110px;" onchange="saveHabits()">
+                </div>
+                <div class="routine-item">
+                    <label>🌙 預計就寢</label>
+                    <input type="time" id="sleep-time" value="23:00" style="max-width: 110px;" onchange="saveHabits()">
+                </div>
+                <div class="routine-item">
+                    <label>💧 每日喝水</label>
+                    <select id="water-intake" style="max-width: 110px;" onchange="saveHabits()">
+                        <option>1000 ml</option>
+                        <option selected>1500 ml</option>
+                        <option>2000 ml</option>
+                        <option>2500+ ml</option>
+                    </select>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+
+            <!-- 🚨 今日截止作業/計劃提醒警告框 -->
+            <div class="alert-box" id="today-due-alert">
+                <div style="font-weight: bold; margin-bottom: 6px; font-size: 0.95rem;">🚨 今日截止提醒！請檢核是否已完成：</div>
+                <ul id="today-due-list" style="margin-left: 20px; font-weight: normal; font-size: 0.88rem;"></ul>
+            </div>
+
+            <!-- 🎁 願望清單與點數兌換 (Wishlist) -->
+            <div class="card" style="border: 2px solid var(--pink-accent);">
+                <div class="card-header">
+                    <div class="card-title">🎁 願望清單與獎勵兌換</div>
+                    <span style="font-size:0.78rem; color:var(--text-sub);">💡 換算規則：每 $100 元 = 1 點</span>
+                </div>
+
+                <!-- 新增願望表單 -->
+                <div class="input-group">
+                    <input type="text" id="wish-name" placeholder="想買的禮物 / 願望 (如: 專櫃口紅)...">
+                    <input type="number" id="wish-price" placeholder="價格 $" style="max-width: 110px;" oninput="updateWishPtsPreview()">
+                    <span id="wish-pts-preview" class="badge-tag badge-pts" style="align-self:center; display:none;">需要 0 點</span>
+                    <button class="btn-pink" onclick="addWishlistItem()">＋ 加入願望</button>
+                </div>
+
+                <!-- 願望清單列表 -->
+                <ul class="item-list" id="wishlist-container"></ul>
+            </div>
+
+            <!-- 📅 點選日期的預計截止作業 / 計劃管理 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title" id="date-planner-title">📅 2026/08/09 預計截止作業與計劃</div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="date-task-input" placeholder="新增預計在此日期截止的作業或計劃...">
+                    <select id="date-task-diff" style="max-width: 130px;">
+                        <option value="0.2">簡單 (+0.2點)</option>
+                        <option value="0.5" selected>普通 (+0.5點)</option>
+                        <option value="1.0">困難 (+1.0點)</option>
+                    </select>
+                    <button class="btn-pink" onclick="addDateTask()">新增至此日期</button>
+                </div>
+                <ul class="item-list" id="date-task-list"></ul>
+            </div>
+
+            <!-- 💰 記帳與預算管理系統 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">💰 理財記帳與預算管理</div>
+                </div>
+
+                <div class="finance-summary">
+                    <div class="finance-box">
+                        <div class="finance-title">固定預設月收入</div>
+                        <div class="finance-amount">$18,600</div>
+                        <div style="font-size: 0.68rem; color: var(--text-sub); margin-top:2px;">(生活費15k + 租補3.6k)</div>
+                    </div>
+                    <div class="finance-box">
+                        <div class="finance-title">本月累積總收入</div>
+                        <div class="finance-amount" id="total-income-txt">$18,600</div>
+                    </div>
+                    <div class="finance-box">
+                        <div class="finance-title">本週「想要」可用額度</div>
+                        <div class="finance-amount" id="want-limit-txt">$2,000</div>
+                    </div>
+                    <div class="finance-box">
+                        <div class="finance-title">本週「想要」已消費</div>
+                        <div class="finance-amount" id="want-spent-txt" style="color:var(--pink-primary);">$0</div>
+                    </div>
+                </div>
+
+                <div class="alert-box" id="want-alert">
+                    ⚠️ <b>警告：</b>本週「想要」消費已超過預算！超出部分將從下週「想要」額度中扣除。
+                </div>
+
+                <div class="tutor-box">
+                    <div style="font-size: 0.88rem; font-weight: bold; color: var(--pink-dark); margin-bottom: 8px;">
+                        👩‍🏫 家教時薪計數器 ($1,200 / hr)
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <select id="tutor-hours">
+                            <option value="1">今天上了 1 小時 (+$1,200)</option>
+                            <option value="1.5">今天上了 1.5 小時 (+$1,800)</option>
+                            <option value="2" selected>今天上了 2 小時 (+$2,400)</option>
+                            <option value="2.5">今天上了 2.5 小時 (+$3,000)</option>
+                            <option value="3">今天上了 3 小時 (+$3,600)</option>
+                        </select>
+                        <button class="btn-pink" onclick="addTutorIncome()">＋ 計入收入</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="expense-name" placeholder="消費項目 (例如: 珍珠奶茶, 書本)...">
+                    <input type="number" id="expense-amount" placeholder="金額 $" style="max-width: 100px;">
+                    <select id="expense-type" style="max-width: 110px;">
+                        <option value="Need">需要 (Need)</option>
+                        <option value="Want" selected>想要 (Want)</option>
+                    </select>
+                    <button class="btn-pink" onclick="addExpense()">新增支出</button>
+                </div>
+
+                <ul class="item-list" id="finance-list"></ul>
+            </div>
+
+            <!-- 吃藥提醒 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">💊 吃藥提醒 (全天完成獎勵 +0.5點)</div>
+                </div>
+                <div class="med-notice">
+                    ✨ 醫師叮嚀：三餐飯後記得服用<b>「永康緒」</b>，睡前記得服用<b>「憂解」</b>。
+                </div>
+                <ul class="item-list" id="med-list">
+                    <li class="item" data-id="med-1">
+                        <div class="item-left">
+                            <input type="checkbox" onchange="checkMedicationCompletion()">
+                            <span class="badge-tag">早餐後</span>
+                            <span>永康緒 1 錠</span>
+                        </div>
+                    </li>
+                    <li class="item" data-id="med-2">
+                        <div class="item-left">
+                            <input type="checkbox" onchange="checkMedicationCompletion()">
+                            <span class="badge-tag">午餐後</span>
+                            <span>永康緒 1 錠</span>
+                        </div>
+                    </li>
+                    <li class="item" data-id="med-3">
+                        <div class="item-left">
+                            <input type="checkbox" onchange="checkMedicationCompletion()">
+                            <span class="badge-tag">晚餐後</span>
+                            <span>永康緒 1 錠</span>
+                        </div>
+                    </li>
+                    <li class="item" data-id="med-4">
+                        <div class="item-left">
+                            <input type="checkbox" onchange="checkMedicationCompletion()">
+                            <span class="badge-tag" style="background:#f4acb7; color:white;">睡前</span>
+                            <span>憂解 1 錠</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 2 Columns: 讀書 & 運動 -->
+            <div class="main-grid">
+
+                <!-- 讀書計劃 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📖 讀書計劃</div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="study-input" placeholder="新增科目 / 章節...">
+                        <select id="study-diff" style="max-width: 110px;">
+                            <option value="0.2">簡單(+0.2)</option>
+                            <option value="0.5" selected>普通(+0.5)</option>
+                            <option value="1.0">困難(+1.0)</option>
+                        </select>
+                        <button class="btn-pink" onclick="addCustomTask('study-input', 'study-list', 'study-diff', '讀書')">新增</button>
+                    </div>
+                    <ul class="item-list" id="study-list"></ul>
+                </div>
+
+                <!-- 運動計劃 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">🏃‍♀️ 運動計劃</div>
+                    </div>
+
+                    <!-- 健身房每週目標追蹤 -->
+                    <div class="gym-tracker">
+                        <div class="gym-header">
+                            <span>🏋️‍♀️ 健身房 1 小時 (每週達標 3 次 +2.0點)</span>
+                            <span id="gym-count-text">0 / 3 次</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="gym-progress"></div>
+                        </div>
+                        <div class="gym-btn-group">
+                            <button class="btn-gym" onclick="updateGymCount(1)">+ 打卡一次</button>
+                            <button class="btn-gym" onclick="updateGymCount(-1)">- 減少一次</button>
+                            <button class="btn-gym" onclick="resetGymCount()">重置</button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="sport-input" placeholder="新增其他運動...">
+                        <select id="sport-diff" style="max-width: 110px;">
+                            <option value="0.2">簡單(+0.2)</option>
+                            <option value="0.5" selected>普通(+0.5)</option>
+                            <option value="1.0">困難(+1.0)</option>
+                        </select>
+                        <button class="btn-pink" onclick="addCustomTask('sport-input', 'sport-list', 'sport-diff', '運動')">新增</button>
+                    </div>
+
+                    <ul class="item-list" id="sport-list">
+                        <li class="item" data-id="sport-core" data-pts="0.2">
+                            <div class="item-left">
+                                <input type="checkbox" onchange="togglePointTask(this, 0.2)">
+                                <span class="badge-tag" style="background:#f4acb7; color:white;">睡前</span>
+                                <span class="badge-tag badge-pts">+0.2點</span>
+                                <span>練核心 10 分鐘</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- 🏫 大學課表系統 (在最下方) -->
+            <div class="card" style="margin-top: 10px;">
+                <div class="card-header">
+                    <div class="card-title">🏫 大學預選課表 (Schedule)</div>
+                    <div>
+                        <button class="btn-secondary" onclick="resetDefaultSchedule()">重置為預設課表</button>
+                        <button class="btn-pink" onclick="openCourseModal()">＋ 新增/編輯課程</button>
+                    </div>
+                </div>
+
+                <div class="timetable-container">
+                    <table class="timetable">
+                        <thead>
+                            <tr>
+                                <th class="time-col">節次 / 時間</th>
+                                <th>週一</th>
+                                <th>週二</th>
+                                <th>週三</th>
+                                <th>週四</th>
+                                <th>週五</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timetable-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- 新增/編輯課程彈窗 Modal -->
+<div class="modal-overlay" id="course-modal">
+    <div class="modal-card">
+        <div class="modal-title" id="modal-title-txt">🌸 手動新增 / 編輯課程</div>
+        
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+                <label style="font-size:0.8rem; color:var(--text-sub);">課程名稱</label>
+                <input type="text" id="modal-c-name" placeholder="例如: 組織學" style="width:100%; margin-top:4px;">
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <div style="flex:1;">
+                    <label style="font-size:0.8rem; color:var(--text-sub);">星期</label>
+                    <select id="modal-c-day" style="width:100%; margin-top:4px;">
+                        <option value="1">週一</option>
+                        <option value="2">週二</option>
+                        <option value="3">週三</option>
+                        <option value="4">週四</option>
+                        <option value="5">週五</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <div style="flex:1;">
+                    <label style="font-size:0.8rem; color:var(--text-sub);">開始節次</label>
+                    <select id="modal-c-start" style="width:100%; margin-top:4px;"></select>
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:0.8rem; color:var(--text-sub);">結束節次</label>
+                    <select id="modal-c-end" style="width:100%; margin-top:4px;"></select>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:16px;">
+                <button class="btn-secondary" onclick="closeCourseModal()">取消</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-secondary" id="btn-delete-course" style="color:var(--alert-red); display:none;" onclick="deleteCurrentCourse()">刪除此課</button>
+                    <button class="btn-pink" onclick="saveCourseFromModal()">保存課程</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 時間與日曆設置
+    const todayObj = new Date();
+    const todayStr = formatDateStr(todayObj.getFullYear(), todayObj.getMonth() + 1, todayObj.getDate());
+    let selectedDateStr = todayStr;
+
+    // 點數數據
+    let totalPoints = 0.0;
+    let medBonusAwardedToday = false;
+    let gymBonusAwardedThisWeek = false;
+
+    // 願望清單
+    let wishlist = [];
+
+    // 日期截止任務數據
+    let dateTasks = {};
+
+    // 預設課表與時間表
+    const periods = [
+        { id: 1, label: '1 節', time: '08:10 - 09:00' },
+        { id: 2, label: '2 節', time: '09:10 - 10:00' },
+        { id: 3, label: '3 節', time: '10:20 - 11:10' },
+        { id: 4, label: '4 節', time: '11:20 - 12:10' },
+        { id: 5, label: '5 節', time: '12:20 - 13:10' },
+        { id: 6, label: '6 節', time: '13:20 - 14:10' },
+        { id: 7, label: '7 節', time: '14:20 - 15:10' },
+        { id: 8, label: '8 節', time: '15:30 - 16:20' },
+        { id: 9, label: '9 節', time: '16:30 - 17:20' }
+    ];
+
+    const defaultCourses = [
+        { id: 'c1', name: '組織學', day: 1, start: 1, end: 4, color: '#f8bbd0' },
+        { id: 'c2', name: '生理學', day: 1, start: 6, end: 9, color: '#e1bee7' },
+        { id: 'c3', name: '大體解剖', day: 2, start: 1, end: 4, color: '#bbdefb' },
+        { id: 'c4', name: '胚胎學', day: 2, start: 6, end: 7, color: '#c8e6c9' },
+        { id: 'c5', name: '大體解剖', day: 2, start: 8, end: 9, color: '#bbdefb' },
+        { id: 'c6', name: '牙科器材學', day: 3, start: 2, end: 2, color: '#ffe0b2' },
+        { id: 'c7', name: '牙體復形學', day: 3, start: 3, end: 3, color: '#ffcc80' },
+        { id: 'c8', name: '牙體復形學實驗', day: 3, start: 4, end: 4, color: '#ffb74d' },
+        { id: 'c9', name: '大體解剖學', day: 3, start: 6, end: 7, color: '#bbdefb' },
+        { id: 'c10', name: '組織學', day: 3, start: 8, end: 9, color: '#f8bbd0' },
+        { id: 'c11', name: '口腔解剖學', day: 5, start: 1, end: 1, color: '#d1c4e9' },
+        { id: 'c12', name: '醫師與人文', day: 5, start: 3, end: 4, color: '#b2dfdb' },
+        { id: 'c13', name: '口腔胚胎及組織學', day: 5, start: 5, end: 8, color: '#f48fb1' }
+    ];
+
+    let courses = [];
+    let editingCourseId = null;
+
+    let gymCount = 0;
+    let baseIncome = 18600;
+    let tutorIncomeTotal = 0;
+    let financeItems = [];
+    const BASE_WEEKLY_WANT_LIMIT = 2000;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSavedData();
+        renderCalendar();
+        renderWeekStrip();
+        renderDateTasks();
+        checkTodayDueAlert();
+        renderPointsUI();
+        renderWishlist();
+        initModalSelectors();
+        loadSchedule();
+        recalculateFinance();
+    });
+
+    function formatDateStr(year, month, day) {
+        const m = month < 10 ? '0' + month : month;
+        const d = day < 10 ? '0' + day : day;
+        return `${year}-${m}-${d}`;
+    }
+
+    /* 🌟 點數管理系統 (Points Manager) */
+    function addPoints(pts) {
+        totalPoints = parseFloat((totalPoints + pts).toFixed(1));
+        renderPointsUI();
+        savePointsData();
+    }
+
+    function deductPoints(pts) {
+        totalPoints = parseFloat((totalPoints - pts).toFixed(1));
+        renderPointsUI();
+        savePointsData();
+    }
+
+    function renderPointsUI() {
+        document.getElementById('user-points-display').innerText = totalPoints.toFixed(1);
+    }
+
+    function savePointsData() {
+        localStorage.setItem('gigi_planner_points', totalPoints);
+        localStorage.setItem('gigi_planner_med_bonus', medBonusAwardedToday);
+        localStorage.setItem('gigi_planner_gym_bonus', gymBonusAwardedThisWeek);
+    }
+
+    /* 🎁 願望清單 Wishlist Manager */
+    function updateWishPtsPreview() {
+        const price = parseFloat(document.getElementById('wish-price').value);
+        const preview = document.getElementById('wish-pts-preview');
+        if (!isNaN(price) && price > 0) {
+            const reqPts = (price / 100).toFixed(1);
+            preview.innerText = `需要 ${reqPts} 點`;
+            preview.style.display = 'inline-block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    function addWishlistItem() {
+        const nameInput = document.getElementById('wish-name');
+        const priceInput = document.getElementById('wish-price');
+
+        const name = nameInput.value.trim();
+        const price = parseFloat(priceInput.value);
+
+        if (!name || isNaN(price) || price <= 0) {
+            alert('請輸入有效的願望名稱與金額！');
+            return;
+        }
+
+        const reqPoints = parseFloat((price / 100).toFixed(1));
+
+        wishlist.push({
+            id: 'wish-' + Date.now(),
+            name: name,
+            price: price,
+            reqPoints: reqPoints,
+            redeemed: false
+        });
+
+        nameInput.value = '';
+        priceInput.value = '';
+        document.getElementById('wish-pts-preview').style.display = 'none';
+
+        saveWishlistData();
+        renderWishlist();
+    }
+
+    function redeemWishItem(id) {
+        const item = wishlist.find(w => w.id === id);
+        if (!item) return;
+
+        if (totalPoints < item.reqPoints) {
+            alert(`點數不足喔！還差 ${(item.reqPoints - totalPoints).toFixed(1)} 點，繼續加油獎勵自己！✨`);
+            return;
+        }
+
+        if (confirm(`確定要消耗 ${item.reqPoints} 點兌換「${item.name}」嗎？`)) {
+            deductPoints(item.reqPoints);
+            item.redeemed = true;
+            saveWishlistData();
+            renderWishlist();
+        }
+    }
+
+    function deleteWishItem(id) {
+        wishlist = wishlist.filter(w => w.id !== id);
+        saveWishlistData();
+        renderWishlist();
+    }
+
+    function renderWishlist() {
+        const container = document.getElementById('wishlist-container');
+        container.innerHTML = '';
+
+        wishlist.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'item' + (item.redeemed ? ' completed' : '');
+
+            const canAfford = totalPoints >= item.reqPoints && !item.redeemed;
+
+            li.innerHTML = `
+                <div class="item-left">
+                    <span class="badge-tag badge-pts">需 ${item.reqPoints} 點</span>
+                    <span>${item.name} ($${item.price.toLocaleString()})</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    ${item.redeemed 
+                        ? `<span class="badge-tag" style="background:#c8e6c9; color:#2e7d32;">🎉 已兌換</span>`
+                        : `<button class="${canAfford ? 'btn-pink' : 'btn-secondary'}" onclick="redeemWishItem('${item.id}')">${canAfford ? '🎁 兌換獎勵' : '點數不足'}</button>`
+                    }
+                    <button class="btn-del" onclick="deleteWishItem('${item.id}')">✕</button>
+                </div>
+            `;
+            container.appendChild(li);
+        });
+    }
+
+    function saveWishlistData() {
+        localStorage.setItem('gigi_planner_wishlist', JSON.stringify(wishlist));
+    }
+
+    /* 📅 月曆與選取日期 */
+    function renderCalendar() {
+        const year = todayObj.getFullYear();
+        const month = todayObj.getMonth();
+
+        document.getElementById('month-title').innerText = `${year} 年 ${month + 1} 月`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const calContainer = document.getElementById('cal-dates');
+        calContainer.innerHTML = '';
+
+        for (let i = 0; i < firstDay; i++) {
+            calContainer.appendChild(document.createElement('div'));
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = formatDateStr(year, month + 1, day);
+            const dateCell = document.createElement('div');
+            dateCell.className = 'cal-date';
+
+            if (dateStr === todayStr) dateCell.classList.add('today');
+            if (dateStr === selectedDateStr) dateCell.classList.add('selected');
+
+            if (dateTasks[dateStr] && dateTasks[dateStr].length > 0) {
+                dateCell.classList.add('has-task');
+            }
+
+            dateCell.innerText = day;
+            dateCell.onclick = () => selectDate(dateStr);
+
+            calContainer.appendChild(dateCell);
+        }
+    }
+
+    function selectDate(dateStr) {
+        selectedDateStr = dateStr;
+        renderCalendar();
+        renderWeekStrip();
+        renderDateTasks();
+    }
+
+    function renderWeekStrip() {
+        const currentDay = todayObj.getDay(); 
+        const weekContainer = document.getElementById('week-strip');
+        weekContainer.innerHTML = '';
+
+        const days = ['日', '一', '二', '三', '四', '五', '六'];
+        
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(todayObj);
+            date.setDate(todayObj.getDate() - currentDay + i);
+
+            const dateStr = formatDateStr(date.getFullYear(), date.getMonth() + 1, date.getDate());
+
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'week-day';
+            if (dateStr === selectedDateStr) dayDiv.classList.add('active');
+
+            dayDiv.onclick = () => selectDate(dateStr);
+
+            dayDiv.innerHTML = `
+                <div style="font-size:0.7rem; color:var(--text-sub);">${days[i]}</div>
+                <div style="font-size:0.9rem; font-weight:bold; margin-top:2px;">${date.getDate()}</div>
+            `;
+            weekContainer.appendChild(dayDiv);
+        }
+    }
+
+    /* 📅 日期截止任務管理 */
+    function renderDateTasks() {
+        const titleContainer = document.getElementById('date-planner-title');
+        const isToday = (selectedDateStr === todayStr);
+        titleContainer.innerHTML = `📅 ${selectedDateStr} 預計截止作業與計劃 ${isToday ? '<span class="badge-tag" style="background:var(--pink-primary); color:white; margin-left:8px;">今天</span>' : ''}`;
+
+        const list = document.getElementById('date-task-list');
+        list.innerHTML = '';
+
+        const tasks = dateTasks[selectedDateStr] || [];
+
+        tasks.forEach(task => {
+            const li = document.createElement('li');
+            li.className = 'item' + (task.completed ? ' completed' : '');
+
+            li.innerHTML = `
+                <div class="item-left">
+                    <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleDateTask('${task.id}', this, ${task.pts || 0.5})">
+                    <span class="badge-tag badge-pts">+${task.pts || 0.5}點</span>
+                    <span>${task.text}</span>
+                </div>
+                <button class="btn-del" onclick="deleteDateTask('${task.id}')">✕</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    function addDateTask() {
+        const input = document.getElementById('date-task-input');
+        const diffSel = document.getElementById('date-task-diff');
+        const text = input.value.trim();
+        const pts = parseFloat(diffSel.value);
+
+        if (!text) return;
+
+        if (!dateTasks[selectedDateStr]) {
+            dateTasks[selectedDateStr] = [];
+        }
+
+        dateTasks[selectedDateStr].push({
+            id: 'dt-' + Date.now(),
+            text: text,
+            pts: pts,
+            completed: false
+        });
+
+        input.value = '';
+        saveDateTasks();
+        renderCalendar();
+        renderDateTasks();
+        checkTodayDueAlert();
+    }
+
+    function toggleDateTask(taskId, checkbox, pts) {
+        const tasks = dateTasks[selectedDateStr] || [];
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.completed = checkbox.checked;
+            if (checkbox.checked) {
+                addPoints(pts);
+            } else {
+                deductPoints(pts);
+            }
+            saveDateTasks();
+            renderDateTasks();
+            checkTodayDueAlert();
+        }
+    }
+
+    function deleteDateTask(taskId) {
+        if (dateTasks[selectedDateStr]) {
+            dateTasks[selectedDateStr] = dateTasks[selectedDateStr].filter(t => t.id !== taskId);
+            if (dateTasks[selectedDateStr].length === 0) {
+                delete dateTasks[selectedDateStr];
+            }
+            saveDateTasks();
+            renderCalendar();
+            renderDateTasks();
+            checkTodayDueAlert();
+        }
+    }
+
+    function saveDateTasks() {
+        localStorage.setItem('gigi_planner_date_tasks', JSON.stringify(dateTasks));
+    }
+
+    function checkTodayDueAlert() {
+        const alertBox = document.getElementById('today-due-alert');
+        const alertList = document.getElementById('today-due-list');
+
+        const todayTasks = dateTasks[todayStr] || [];
+        const pendingTodayTasks = todayTasks.filter(t => !t.completed);
+
+        if (pendingTodayTasks.length > 0) {
+            alertBox.style.display = 'block';
+            alertList.innerHTML = '';
+            pendingTodayTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.style.marginTop = '4px';
+                li.innerText = task.text;
+                alertList.appendChild(li);
+            });
+        } else {
+            alertBox.style.display = 'none';
+        }
+    }
+
+    /* 💊 吃藥全天加點邏輯 (+0.5 點) */
+    function checkMedicationCompletion() {
+        const allMeds = document.querySelectorAll('#med-list input[type="checkbox"]');
+        let allChecked = true;
+
+        allMeds.forEach(cb => {
+            const li = cb.closest('.item');
+            if (cb.checked) {
+                li.classList.add('completed');
+            } else {
+                li.classList.remove('completed');
+                allChecked = false;
+            }
+        });
+
+        if (allChecked && !medBonusAwardedToday) {
+            medBonusAwardedToday = true;
+            addPoints(0.5);
+            alert('🌸 太棒了！今天有按時吃完所有藥物，獲得獎勵點數 +0.5 點！✨');
+        } else if (!allChecked && medBonusAwardedToday) {
+            medBonusAwardedToday = false;
+            deductPoints(0.5);
+        }
+
+        saveAllLists();
+    }
+
+    /* 🏃‍♀️ 健身打卡與加點邏輯 (滿 3 次 +2.0 點) */
+    function updateGymCount(change) {
+        const prevCount = gymCount;
+        gymCount = Math.max(0, Math.min(3, gymCount + change));
+
+        if (gymCount === 3 && !gymBonusAwardedThisWeek) {
+            gymBonusAwardedThisWeek = true;
+            addPoints(2.0);
+            alert('🎉 恭喜！本週完成健身房 3 次目標，獲得額外獎勵 +2.0 點！🏋️‍♀️');
+        } else if (prevCount === 3 && gymCount < 3 && gymBonusAwardedThisWeek) {
+            gymBonusAwardedThisWeek = false;
+            deductPoints(2.0);
+        }
+
+        renderGymUI();
+        saveHabits();
+    }
+
+    function resetGymCount() {
+        if (gymCount === 3 && gymBonusAwardedThisWeek) {
+            gymBonusAwardedThisWeek = false;
+            deductPoints(2.0);
+        }
+        gymCount = 0;
+        renderGymUI();
+        saveHabits();
+    }
+
+    function renderGymUI() {
+        document.getElementById('gym-count-text').innerText = `${gymCount} / 3 次`;
+        const percentage = (gymCount / 3) * 100;
+        document.getElementById('gym-progress').style.width = `${percentage}%`;
+    }
+
+    /* 自訂任務 (讀書 / 運動) 帶有點數選單 */
+    function addCustomTask(inputId, listId, diffId, tagText) {
+        const input = document.getElementById(inputId);
+        const diffSel = document.getElementById(diffId);
+
+        const text = input.value.trim();
+        const pts = parseFloat(diffSel.value);
+
+        if (!text) return;
+
+        const list = document.getElementById(listId);
+        const itemId = 'item-' + Date.now();
+
+        const li = document.createElement('li');
+        li.className = 'item';
+        li.setAttribute('data-id', itemId);
+        li.setAttribute('data-pts', pts);
+
+        li.innerHTML = `
+            <div class="item-left">
+                <input type="checkbox" onchange="togglePointTask(this, ${pts})">
+                ${tagText ? `<span class="badge-tag">${tagText}</span>` : ''}
+                <span class="badge-tag badge-pts">+${pts}點</span>
+                <span>${text}</span>
+            </div>
+            <button class="btn-del" onclick="deletePointTask(this)">✕</button>
+        `;
+
+        list.appendChild(li);
+        input.value = '';
+        saveAllLists();
+    }
+
+    function togglePointTask(checkbox, pts) {
+        const item = checkbox.closest('.item');
+        if (checkbox.checked) {
+            item.classList.add('completed');
+            addPoints(pts);
+        } else {
+            item.classList.remove('completed');
+            deductPoints(pts);
+        }
+        saveAllLists();
+    }
+
+    function deletePointTask(btn) {
+        const item = btn.closest('.item');
+        const cb = item.querySelector('input[type="checkbox"]');
+        const pts = parseFloat(item.getAttribute('data-pts') || 0);
+
+        if (cb && cb.checked) {
+            deductPoints(pts);
+        }
+
+        item.remove();
+        saveAllLists();
+    }
+
+    /* 🏫 課表繪製與管理 */
+    function initModalSelectors() {
+        const startSel = document.getElementById('modal-c-start');
+        const endSel = document.getElementById('modal-c-end');
+        startSel.innerHTML = '';
+        endSel.innerHTML = '';
+
+        periods.forEach(p => {
+            startSel.innerHTML += `<option value="${p.id}">${p.label} (${p.time})</option>`;
+            endSel.innerHTML += `<option value="${p.id}">${p.label} (${p.time})</option>`;
+        });
+    }
+
+    function renderTimetable() {
+        const tbody = document.getElementById('timetable-body');
+        tbody.innerHTML = '';
+
+        periods.forEach(p => {
+            const tr = document.createElement('tr');
+            
+            tr.innerHTML = `
+                <td class="time-col">
+                    <div style="font-weight:bold;">${p.label}</div>
+                    <div style="font-size:0.68rem; color:#a08088;">${p.time.replace(' - ', '<br>')}</div>
+                </td>
+            `;
+
+            for (let day = 1; day <= 5; day++) {
+                const activeCourse = courses.find(c => c.day === day && p.id >= c.start && p.id <= c.end);
+
+                if (activeCourse) {
+                    if (p.id === activeCourse.start) {
+                        const rowSpan = activeCourse.end - activeCourse.start + 1;
+                        const td = document.createElement('td');
+                        td.rowSpan = rowSpan;
+                        td.style.padding = '3px';
+
+                        td.innerHTML = `
+                            <div class="course-card" style="background-color: ${activeCourse.color || '#f8bbd0'};" onclick="editCourse('${activeCourse.id}')">
+                                <div>${activeCourse.name}</div>
+                                <div style="font-size:0.68rem; opacity:0.8; font-weight:normal; margin-top:2px;">
+                                    ${activeCourse.start === activeCourse.end ? `${activeCourse.start}節` : `${activeCourse.start}~${activeCourse.end}節`}
+                                </div>
+                            </div>
+                        `;
+                        tr.appendChild(td);
+                    }
+                } else {
+                    tr.appendChild(document.createElement('td'));
+                }
+            }
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function loadSchedule() {
+        const saved = localStorage.getItem('neo_pink_planner_schedule');
+        if (saved) {
+            courses = JSON.parse(saved);
+        } else {
+            courses = [...defaultCourses];
+        }
+        renderTimetable();
+    }
+
+    function saveSchedule() {
+        localStorage.setItem('neo_pink_planner_schedule', JSON.stringify(courses));
+        renderTimetable();
+    }
+
+    function resetDefaultSchedule() {
+        if (confirm('確定要將課表重置為預設課表嗎？')) {
+            courses = [...defaultCourses];
+            saveSchedule();
+        }
+    }
+
+    function openCourseModal() {
+        editingCourseId = null;
+        document.getElementById('modal-title-txt').innerText = '🌸 手動新增課程';
+        document.getElementById('modal-c-name').value = '';
+        document.getElementById('modal-c-day').value = '1';
+        document.getElementById('modal-c-start').value = '1';
+        document.getElementById('modal-c-end').value = '1';
+        document.getElementById('btn-delete-course').style.display = 'none';
+
+        document.getElementById('course-modal').style.display = 'flex';
+    }
+
+    function editCourse(id) {
+        const c = courses.find(item => item.id === id);
+        if (!c) return;
+
+        editingCourseId = id;
+        document.getElementById('modal-title-txt').innerText = '🌸 編輯 / 刪除課程';
+        document.getElementById('modal-c-name').value = c.name;
+        document.getElementById('modal-c-day').value = c.day;
+        document.getElementById('modal-c-start').value = c.start;
+        document.getElementById('modal-c-end').value = c.end;
+        document.getElementById('btn-delete-course').style.display = 'inline-block';
+
+        document.getElementById('course-modal').style.display = 'flex';
+    }
+
+    function closeCourseModal() {
+        document.getElementById('course-modal').style.display = 'none';
+    }
+
+    function saveCourseFromModal() {
+        const name = document.getElementById('modal-c-name').value.trim();
+        const day = parseInt(document.getElementById('modal-c-day').value);
+        const start = parseInt(document.getElementById('modal-c-start').value);
+        const end = parseInt(document.getElementById('modal-c-end').value);
+
+        if (!name || start > end) return;
+
+        const colors = ['#f8bbd0', '#e1bee7', '#bbdefb', '#c8e6c9', '#ffe0b2', '#ffcc80', '#b2dfdb', '#f48fb1'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+        if (editingCourseId) {
+            const idx = courses.findIndex(c => c.id === editingCourseId);
+            if (idx !== -1) courses[idx] = { ...courses[idx], name, day, start, end };
+        } else {
+            courses.push({ id: 'c-' + Date.now(), name, day, start, end, color: randomColor });
+        }
+
+        saveSchedule();
+        closeCourseModal();
+    }
+
+    function deleteCurrentCourse() {
+        if (!editingCourseId) return;
+        courses = courses.filter(c => c.id !== editingCourseId);
+        saveSchedule();
+        closeCourseModal();
+    }
+
+    /* 💰 記帳理財邏輯 */
+    function addTutorIncome() {
+        const hours = parseFloat(document.getElementById('tutor-hours').value);
+        const amount = hours * 1200;
+        
+        tutorIncomeTotal += amount;
+        
+        financeItems.push({
+            id: 'fin-' + Date.now(),
+            name: `家教收入 (${hours} 小時)`,
+            amount: amount,
+            type: 'Income',
+            kind: '家教'
+        });
+
+        recalculateFinance();
+        saveFinanceData();
+    }
+
+    function addExpense() {
+        const nameInput = document.getElementById('expense-name');
+        const amountInput = document.getElementById('expense-amount');
+        const typeSelect = document.getElementById('expense-type');
+
+        const name = nameInput.value.trim();
+        const amount = parseFloat(amountInput.value);
+        const kind = typeSelect.value;
+
+        if (!name || isNaN(amount) || amount <= 0) return;
+
+        financeItems.push({
+            id: 'fin-' + Date.now(),
+            name: name,
+            amount: amount,
+            type: 'Expense',
+            kind: kind
+        });
+
+        nameInput.value = '';
+        amountInput.value = '';
+
+        recalculateFinance();
+        saveFinanceData();
+    }
+
+    function deleteFinanceItem(id) {
+        financeItems = financeItems.filter(item => item.id !== id);
+        recalculateFinance();
+        saveFinanceData();
+    }
+
+    function recalculateFinance() {
+        let currentTutorIncome = 0;
+        let wantSpent = 0;
+
+        const listContainer = document.getElementById('finance-list');
+        listContainer.innerHTML = '';
+
+        financeItems.forEach(item => {
+            if (item.type === 'Income') {
+                currentTutorIncome += item.amount;
+            } else if (item.type === 'Expense' && item.kind === 'Want') {
+                wantSpent += item.amount;
+            }
+
+            const li = document.createElement('li');
+            li.className = 'item';
+            
+            let tagHTML = item.type === 'Income' 
+                ? `<span class="badge-tag" style="background:#c8e6c9; color:#2e7d32;">收入</span>`
+                : (item.kind === 'Need' ? `<span class="badge-tag badge-need">需要</span>` : `<span class="badge-tag badge-want">想要</span>`);
+
+            li.innerHTML = `
+                <div class="item-left">
+                    ${tagHTML}
+                    <span>${item.name}</span>
+                </div>
+                <div>
+                    <span style="font-weight:bold; color:${item.type === 'Income' ? '#2e7d32' : 'var(--pink-dark)'};">
+                        ${item.type === 'Income' ? '+' : '-'}$${item.amount}
+                    </span>
+                    <button class="btn-del" onclick="deleteFinanceItem('${item.id}')">✕</button>
+                </div>
+            `;
+            listContainer.appendChild(li);
+        });
+
+        tutorIncomeTotal = currentTutorIncome;
+        const totalIncome = baseIncome + tutorIncomeTotal;
+
+        document.getElementById('total-income-txt').innerText = `$${totalIncome.toLocaleString()}`;
+        document.getElementById('want-spent-txt').innerText = `$${wantSpent.toLocaleString()}`;
+
+        const alertBox = document.getElementById('want-alert');
+        const wantLimitTxt = document.getElementById('want-limit-txt');
+
+        if (wantSpent > BASE_WEEKLY_WANT_LIMIT) {
+            const overflow = wantSpent - BASE_WEEKLY_WANT_LIMIT;
+            const nextWeekLimit = Math.max(0, BASE_WEEKLY_WANT_LIMIT - overflow);
+            
+            alertBox.style.display = 'flex';
+            alertBox.innerHTML = `⚠️ <b>「想要」超額提醒：</b>本週已超額 $${overflow}！下週可用額度調整為 <b>$${nextWeekLimit}</b>。`;
+            wantLimitTxt.innerText = `$${BASE_WEEKLY_WANT_LIMIT} (已超額)`;
+            wantLimitTxt.style.color = 'var(--alert-red)';
+        } else {
+            alertBox.style.display = 'none';
+            wantLimitTxt.innerText = `$${BASE_WEEKLY_WANT_LIMIT}`;
+            wantLimitTxt.style.color = 'var(--pink-dark)';
+        }
+    }
+
+    function saveFinanceData() {
+        localStorage.setItem('neo_pink_planner_finance', JSON.stringify(financeItems));
+    }
+
+    /* 讀取與儲存通用數據 */
+    function saveAllLists() {
+        const data = {
+            meds: getListState('med-list'),
+            study: getListState('study-list'),
+            sport: getListState('sport-list')
+        };
+        localStorage.setItem('neo_pink_planner_data', JSON.stringify(data));
+    }
+
+    function saveHabits() {
+        const habits = {
+            wake: document.getElementById('wake-time').value,
+            sleep: document.getElementById('sleep-time').value,
+            water: document.getElementById('water-intake').value,
+            gymCount: gymCount
+        };
+        localStorage.setItem('neo_pink_planner_habits', JSON.stringify(habits));
+    }
+
+    function getListState(listId) {
+        const items = [];
+        document.querySelectorAll(`#${listId} .item`).forEach(li => {
+            const checkbox = li.querySelector('input[type="checkbox"]');
+            const textSpan = li.querySelector('.item-left span:last-child');
+            const pts = li.getAttribute('data-pts') || 0;
+
+            items.push({
+                id: li.getAttribute('data-id'),
+                text: textSpan ? textSpan.innerText : '',
+                pts: parseFloat(pts),
+                checked: checkbox ? checkbox.checked : false
+            });
+        });
+        return items;
+    }
+
+    function loadSavedData() {
+        const savedPts = localStorage.getItem('gigi_planner_points');
+        if (savedPts !== null) totalPoints = parseFloat(savedPts);
+
+        medBonusAwardedToday = localStorage.getItem('gigi_planner_med_bonus') === 'true';
+        gymBonusAwardedThisWeek = localStorage.getItem('gigi_planner_gym_bonus') === 'true';
+
+        const savedWishlist = localStorage.getItem('gigi_planner_wishlist');
+        if (savedWishlist) wishlist = JSON.parse(savedWishlist);
+
+        const savedDateTasks = localStorage.getItem('gigi_planner_date_tasks');
+        if (savedDateTasks) dateTasks = JSON.parse(savedDateTasks);
+
+        const savedData = localStorage.getItem('neo_pink_planner_data');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            if (data.meds) {
+                data.meds.forEach(savedMed => {
+                    const li = document.querySelector(`#med-list .item[data-id="${savedMed.id}"]`);
+                    if (li) {
+                        const cb = li.querySelector('input[type="checkbox"]');
+                        if (cb) {
+                            cb.checked = savedMed.checked;
+                            if (savedMed.checked) li.classList.add('completed');
+                        }
+                    }
+                });
+            }
+            loadCustomList('study-list', data.study, '讀書');
+            loadCustomList('sport-list', data.sport, '運動');
+        }
+
+        const savedHabits = localStorage.getItem('neo_pink_planner_habits');
+        if (savedHabits) {
+            const habits = JSON.parse(savedHabits);
+            if (habits.wake) document.getElementById('wake-time').value = habits.wake;
+            if (habits.sleep) document.getElementById('sleep-time').value = habits.sleep;
+            if (habits.water) document.getElementById('water-intake').value = habits.water;
+            if (habits.gymCount !== undefined) {
+                gymCount = habits.gymCount;
+                renderGymUI();
+            }
+        }
+
+        const savedFinance = localStorage.getItem('neo_pink_planner_finance');
+        if (savedFinance) financeItems = JSON.parse(savedFinance);
+    }
+
+    function loadCustomList(listId, items, tagText) {
+        if (!items) return;
+        const list = document.getElementById(listId);
+        list.innerHTML = '';
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'item' + (item.checked ? ' completed' : '');
+            li.setAttribute('data-id', item.id);
+            li.setAttribute('data-pts', item.pts || 0.5);
+
+            li.innerHTML = `
+                <div class="item-left">
+                    <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="togglePointTask(this, ${item.pts || 0.5})">
+                    ${tagText ? `<span class="badge-tag">${tagText}</span>` : ''}
+                    <span class="badge-tag badge-pts">+${item.pts || 0.5}點</span>
+                    <span>${item.text}</span>
+                </div>
+                <button class="btn-del" onclick="deletePointTask(this)">✕</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+</script>
+
+</body>
+</html>
