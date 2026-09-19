@@ -1002,7 +1002,8 @@
                     </div>
                     <div style="font-size:0.75rem;color:var(--text-sub);margin:-4px 0 10px;">📚 讀書每 2 小時 +1 點（依實際填寫時數計算）</div>
                     <div class="input-group">
-                        <input type="text" id="study-input" placeholder="新增科目 / 章節...">
+                        <input type="text" id="study-subject" placeholder="讀書科目，例如：解剖學">
+                        <input type="text" id="study-chapter" placeholder="章節，例如：第 3 章 神經系統">
                         <input type="number" id="study-hours" min="0.5" step="0.5" value="2" placeholder="讀書時數" style="max-width:110px;">
                         <button class="btn-pink" onclick="addStudyTask()">新增</button>
                     </div>
@@ -2429,22 +2430,30 @@
     }
 
     function addStudyTask() {
-        const input = document.getElementById('study-input');
+        const subjectInput = document.getElementById('study-subject');
+        const chapterInput = document.getElementById('study-chapter');
         const hoursInput = document.getElementById('study-hours');
-        const text = input.value.trim();
+        const subject = subjectInput.value.trim();
+        const chapter = chapterInput.value.trim();
         const hours = parseFloat(hoursInput.value);
-        if (!text || !Number.isFinite(hours) || hours <= 0) return;
+        if (!subject || !chapter || !Number.isFinite(hours) || hours <= 0) {
+            alert('請填寫科目、章節與讀書時數！');
+            return;
+        }
 
         const pts = parseFloat((hours / 2).toFixed(1));
         const plan = getDailyPlan(selectedDateStr);
         plan.study.push({
             id: 'study-' + Date.now(),
-            text,
+            text: `${subject}｜${chapter}`,
+            subject,
+            chapter,
             hours,
             pts,
             checked: false
         });
-        input.value = '';
+        subjectInput.value = '';
+        chapterInput.value = '';
         hoursInput.value = '2';
         saveDailyPlans();
         renderDailyPlans();
