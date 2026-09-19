@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <!-- version 2026-08-10-v3-optimized -->
+    <!-- version 2026-09-19-v4-point-rules -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gigi的生活計劃</title>
@@ -1000,14 +1000,11 @@
                     <div class="card-header">
                         <div class="card-title">📖 讀書計劃 <span id="study-date-label" class="badge-tag"></span></div>
                     </div>
+                    <div style="font-size:0.75rem;color:var(--text-sub);margin:-4px 0 10px;">📚 讀書每 2 小時 +1 點（依實際填寫時數計算）</div>
                     <div class="input-group">
                         <input type="text" id="study-input" placeholder="新增科目 / 章節...">
-                        <select id="study-diff" style="max-width: 110px;">
-                            <option value="0.2">簡單(+0.2)</option>
-                            <option value="0.5" selected>普通(+0.5)</option>
-                            <option value="1.0">困難(+1.0)</option>
-                        </select>
-                        <button class="btn-pink" onclick="addCustomTask('study-input', 'study-list', 'study-diff', '讀書')">新增</button>
+                        <input type="number" id="study-hours" min="0.5" step="0.5" value="2" placeholder="讀書時數" style="max-width:110px;">
+                        <button class="btn-pink" onclick="addStudyTask()">新增</button>
                     </div>
                     <ul class="item-list" id="study-list"></ul>
                 </div>
@@ -1019,7 +1016,7 @@
 
                     <div class="gym-tracker">
                         <div class="gym-header">
-                            <span>🏋️‍♀️ 健身房 1 小時 (每週達標 3 次 +2.0點)</span>
+                            <span>🏋️‍♀️ 健身房 1 小時（每週 2 次 +1.5點；第 3 次再 +1.5點）</span>
                             <span id="gym-count-text">0 / 3 次</span>
                         </div>
                         <div class="progress-bar-bg">
@@ -1559,8 +1556,12 @@
         const amountVal = parseFloat(document.getElementById('edit-pts-amount').value);
         const reason = document.getElementById('edit-pts-reason').value.trim();
 
-        if (isNaN(amountVal) || amountVal < 0) {
-            alert('請輸入有效的非負數值！');
+        if (isNaN(amountVal)) {
+            alert('請輸入有效的數值！');
+            return;
+        }
+        if (action !== 'SET' && amountVal < 0) {
+            alert('增加／扣除模式的數值不能為負數；若要直接設定成負點數，請選擇「直接設定為新數值」。');
             return;
         }
 
@@ -2179,24 +2180,20 @@
 
     function toggleDateTask(taskId, checkbox, pts) {
         const isNowChecked = checkbox.checked;
-        runWithAuth(() => {
-            checkbox.checked = isNowChecked;
-            const tasks = dateTasks[selectedDateStr] || [];
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.completed = isNowChecked;
-                if (isNowChecked) {
-                    addPoints(pts);
-                } else {
-                    deductPoints(pts);
-                }
-                saveDateTasks();
-                renderDateTasks();
-                checkTodayDueAlert();
-            }
-        }, () => {
-            checkbox.checked = !isNowChecked;
-        });
+        const tasks = dateTasks[selectedDateStr] || [];
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        // 待辦事項可由使用者自行勾選／取消，不再要求審核密碼。
+        task.completed = isNowChecked;
+        if (isNowChecked) {
+            addPoints(Number(pts || task.pts || 0));
+        } else {
+            deductPoints(Number(pts || task.pts || 0));
+        }
+        saveDateTasks();
+        renderDateTasks();
+        checkTodayDueAlert();
     }
 
     function deleteDateTask(taskId) {
@@ -2339,28 +2336,35 @@
         runWithAuth(() => {
             const g = getGymWeek(selectedDateStr);
             const prevCount = gymCount;
-            gymCount = Math.max(0, Math.min(3, gymCount + change));
+            const nextCount = Math.max(0, Math.min(3, gymCount + change));
 
-            if (gymCount === 3 && !g.bonus) {
-                g.bonus = true;
-                gymBonusAwardedThisWeek = true;
-                addPoints(2.0);
-                alert('🎉 本週完成健身房 3 次目標，獲得 +2.0 點！🏋️‍♀️');
-            } else if (prevCount === 3 && gymCount < 3 && g.bonus) {
-                g.bonus = false;
-                gymBonusAwardedThisWeek = false;
-                deductPoints(2.0);
-            }
+            // 規則：第 1 次 0 點；第 2 次累積 +1.5；第 3 次再 +1.5（累積 +3）。
+            const bonusForCount = (count) => (count >= 3 ? 3.0 : count >= 2 ? 1.5 : 0.0);
+            const prevBonus = bonusForCount(prevCount);
+            const nextBonus = bonusForCount(nextCount);
+            const diff = parseFloat((nextBonus - prevBonus).toFixed(1));
+
+            gymCount = nextCount;
             g.count = gymCount;
+            g.bonus = gymCount >= 2;
+            gymBonusAwardedThisWeek = g.bonus;
+
+            if (diff > 0) {
+                addPoints(diff);
+                alert(`🏋️‍♀️ 本週健身第 ${gymCount} 次完成！獲得 +${diff.toFixed(1)} 點。`);
+            } else if (diff < 0) {
+                deductPoints(Math.abs(diff));
+            }
+
             renderGymUI();
             saveGymData();
         });
     }
-
     function resetGymCount() {
         runWithAuth(() => {
             const g = getGymWeek(selectedDateStr);
-            if (g.count === 3 && g.bonus) deductPoints(2.0);
+            const currentBonus = g.count >= 3 ? 3.0 : g.count >= 2 ? 1.5 : 0.0;
+            if (currentBonus > 0) deductPoints(currentBonus);
             g.count = 0; g.bonus = false;
             gymCount = 0; gymBonusAwardedThisWeek = false;
             renderGymUI(); saveGymData();
@@ -2412,6 +2416,7 @@
                     <input type="checkbox" ${item.checked?'checked':''} onchange="togglePointTask(this, ${Number(item.pts||0.5)})">
                     ${tagText ? `<span class="badge-tag">${tagText}</span>` : ''}
                     <span class="badge-tag badge-pts">+${Number(item.pts||0.5)}點</span>
+                    ${tagText === '讀書' && item.hours ? `<span class="badge-tag">${Number(item.hours)} 小時</span>` : ''}
                     <span>${item.text}</span>
                 </div>
                 ${item.fixed ? '' : `<button class="btn-del" onclick="deletePointTask(this)">✕</button>`}`;
@@ -2421,6 +2426,28 @@
 
     function saveDailyPlans() {
         localStorage.setItem('gigi_planner_daily_plans', JSON.stringify(dailyPlans));
+    }
+
+    function addStudyTask() {
+        const input = document.getElementById('study-input');
+        const hoursInput = document.getElementById('study-hours');
+        const text = input.value.trim();
+        const hours = parseFloat(hoursInput.value);
+        if (!text || !Number.isFinite(hours) || hours <= 0) return;
+
+        const pts = parseFloat((hours / 2).toFixed(1));
+        const plan = getDailyPlan(selectedDateStr);
+        plan.study.push({
+            id: 'study-' + Date.now(),
+            text,
+            hours,
+            pts,
+            checked: false
+        });
+        input.value = '';
+        hoursInput.value = '2';
+        saveDailyPlans();
+        renderDailyPlans();
     }
 
     function addCustomTask(inputId, listId, diffId, tagText) {
@@ -2581,21 +2608,28 @@
     }
 
     function markCourseAttendance(courseId, periodId, dateStr = todayStr) {
-        runWithAuth(() => {
-            const week = getAttendanceWeek(dateStr);
-            if (!week[courseId]) week[courseId] = {};
-            if (week[courseId][periodId]) {
-                alert(`第 ${periodId} 節本週已經打過卡了，不會重複加點。`);
-                return;
-            }
-            week[courseId][periodId] = true;
-            const course = courses.find(c => c.id === courseId);
-            const pts = course && Number.isFinite(Number(course.pts)) ? Number(course.pts) : 0.2;
-            addPoints(pts);
+        const week = getAttendanceWeek(dateStr);
+        if (!week[courseId]) week[courseId] = {};
+        const course = courses.find(c => c.id === courseId);
+        const currentPts = course && Number.isFinite(Number(course.pts)) ? Number(course.pts) : 0.2;
+
+        if (week[courseId][periodId]) {
+            // 到課可自行取消；取消後把原本加的點數扣回。
+            const awardedPts = Number(week[courseId][periodId]) || currentPts;
+            delete week[courseId][periodId];
+            addPoints(-awardedPts);
             localStorage.setItem('gigi_planner_course_attendance', JSON.stringify(courseAttendance));
             renderTimetable();
-            alert(`🎓 ${dateStr} 第 ${periodId} 節上課打卡成功！獲得 +${pts} 點。`);
-        });
+            alert(`↩️ 已取消 ${dateStr} 第 ${periodId} 節到課確認，扣回 ${awardedPts.toFixed(1)} 點。`);
+            return;
+        }
+
+        // 到課確認可直接自行操作，不再要求審核密碼。
+        week[courseId][periodId] = currentPts;
+        addPoints(currentPts);
+        localStorage.setItem('gigi_planner_course_attendance', JSON.stringify(courseAttendance));
+        renderTimetable();
+        alert(`🎓 ${dateStr} 第 ${periodId} 節上課打卡成功！獲得 +${currentPts} 點。`);
     }
 
     function loadSchedule() {
