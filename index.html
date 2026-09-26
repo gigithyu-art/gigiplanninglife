@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <!-- version 2026-09-19-v4-point-rules -->
+    <!-- version 2026-09-26-v5-auth-split -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gigi的生活計劃</title>
@@ -799,9 +799,9 @@
                 <div class="week-strip" id="week-strip"></div>
             </div>
 
-            <!-- 作息與水份紀錄 (修改時間需要密碼權限) -->
+            <!-- 作息與水份紀錄（使用者可直接修改） -->
             <div class="card">
-                <div class="card-title">🌙 作息 & 水份獎勵 🔐</div><span id="routine-date-label" class="badge-tag"></span>
+                <div class="card-title">🌙 作息 & 水份獎勵</div><span id="routine-date-label" class="badge-tag"></span>
                 <div style="font-size: 0.72rem; color: var(--text-sub); margin-bottom: 8px;">
                     ⏰ 09:00前+0.5 | 10:00前+0.2 (自動計算/防刷點)<br>
                     😴 24:00前+0.5 | 01:00前+0.2
@@ -1471,7 +1471,8 @@
     }
 
     function evaluateWakeTime(inputEl) {
-        runWithAuth(() => processWakeTimeLogic(), () => { inputEl.value = tempOldValue; });
+        // 起床時間由使用者直接修改，不需要審核密碼。
+        processWakeTimeLogic();
     }
 
     function processWakeTimeLogic() {
@@ -1496,7 +1497,8 @@
     }
 
     function evaluateSleepTime(inputEl) {
-        runWithAuth(() => processSleepTimeLogic(), () => { inputEl.value = tempOldValue; });
+        // 睡覺時間由使用者直接修改，不需要審核密碼。
+        processSleepTimeLogic();
     }
 
     function processSleepTimeLogic() {
@@ -2273,43 +2275,39 @@
     }
 
     function checkMedicationCompletion(checkbox) {
-        const isNowChecked = checkbox.checked;
-        runWithAuth(() => {
-            const state = getMedicationState(selectedDateStr);
-            const allMeds = document.querySelectorAll('#med-list input[type="checkbox"]');
-            let allChecked = true;
+        // 吃藥紀錄由使用者直接勾選，不需要審核密碼。
+        const state = getMedicationState(selectedDateStr);
+        const allMeds = document.querySelectorAll('#med-list input[type="checkbox"]');
+        let allChecked = true;
 
-            allMeds.forEach((cb, index) => {
-                state.checked[index] = !!cb.checked;
-                const li = cb.closest('.item');
-                if (cb.checked) {
-                    li.classList.add('completed');
-                } else {
-                    li.classList.remove('completed');
-                    allChecked = false;
-                }
-            });
-
-            const wasBonus = !!state.bonus;
-
-            if (allChecked && !wasBonus) {
-                state.bonus = true;
-                medBonusAwardedToday = true;
-                addPoints(0.5);
-                alert('🌸 太棒了！今天已按時吃完所有藥物，獲得獎勵點數 +0.5 點！✨');
-            } else if (!allChecked && wasBonus) {
-                state.bonus = false;
-                medBonusAwardedToday = false;
-                deductPoints(0.5);
+        allMeds.forEach((cb, index) => {
+            state.checked[index] = !!cb.checked;
+            const li = cb.closest('.item');
+            if (cb.checked) {
+                li.classList.add('completed');
             } else {
-                medBonusAwardedToday = !!state.bonus;
+                li.classList.remove('completed');
+                allChecked = false;
             }
-
-            saveMedicationData();
-            saveAllLists();
-        }, () => {
-            checkbox.checked = !isNowChecked;
         });
+
+        const wasBonus = !!state.bonus;
+
+        if (allChecked && !wasBonus) {
+            state.bonus = true;
+            medBonusAwardedToday = true;
+            addPoints(0.5);
+            alert('🌸 太棒了！今天已按時吃完所有藥物，獲得獎勵點數 +0.5 點！✨');
+        } else if (!allChecked && wasBonus) {
+            state.bonus = false;
+            medBonusAwardedToday = false;
+            deductPoints(0.5);
+        } else {
+            medBonusAwardedToday = !!state.bonus;
+        }
+
+        saveMedicationData();
+        saveAllLists();
     }
 
     /* 🏃‍♀️ 健身房：以「週」為單位自動重置；其他運動以「日」為單位 */
@@ -2476,10 +2474,11 @@
 
     function togglePointTask(checkbox, pts) {
         const isNowChecked = checkbox.checked;
-        runWithAuth(() => {
-            const item = checkbox.closest('.item');
+        const item = checkbox.closest('.item');
+        const type = item.closest('#study-list') ? 'study' : 'sport';
+
+        const applyChange = () => {
             const id = item.dataset.id;
-            const type = item.closest('#study-list') ? 'study' : 'sport';
             const plan = getDailyPlan(selectedDateStr);
             const task = plan[type].find(x => x.id === id);
             if (!task) return;
@@ -2487,19 +2486,36 @@
             if (isNowChecked) { item.classList.add('completed'); addPoints(pts); }
             else { item.classList.remove('completed'); deductPoints(pts); }
             saveDailyPlans();
-        }, () => { checkbox.checked = !isNowChecked; });
+        };
+
+        if (type === 'sport') {
+            // 運動仍需要審核密碼。
+            runWithAuth(applyChange, () => { checkbox.checked = !isNowChecked; });
+        } else {
+            // 讀書由使用者直接勾選，不需要審核密碼。
+            applyChange();
+        }
     }
 
     function deletePointTask(btn) {
         const item = btn.closest('.item');
         const id = item.dataset.id;
         const type = item.closest('#study-list') ? 'study' : 'sport';
-        const plan = getDailyPlan(selectedDateStr);
-        const task = plan[type].find(x=>x.id===id);
-        if (task && task.checked) deductPoints(Number(task.pts||0));
-        plan[type] = plan[type].filter(x=>x.id!==id);
-        saveDailyPlans();
-        renderDailyPlans();
+
+        const applyDelete = () => {
+            const plan = getDailyPlan(selectedDateStr);
+            const task = plan[type].find(x=>x.id===id);
+            if (task && task.checked) deductPoints(Number(task.pts||0));
+            plan[type] = plan[type].filter(x=>x.id!==id);
+            saveDailyPlans();
+            renderDailyPlans();
+        };
+
+        if (type === 'sport') {
+            runWithAuth(applyDelete);
+        } else {
+            applyDelete();
+        }
     }
 
     /* 🏫 課表繪製與管理 */
