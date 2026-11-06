@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <!-- version 2026-11-06-v11-mobile-layout-tutor -->
+    <!-- version 2026-11-06-v14-mobile-layout-study-progress-subjects-dates -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gigi的生活計劃</title>
@@ -462,7 +462,7 @@
 
         @media (max-width: 850px) {
             .time-slots-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(3, 1fr);
             }
         }
 
@@ -727,7 +727,7 @@
             margin-bottom: 16px;
         }
 
-        /* 📱 手機版優化順序：主內容排序透過 DOM 結構調整為：早午晚 -> 期末進度 -> 每日讀書 */
+        /* 📱 手機版版面優化：早午晚最前面、期末進度第二、每日讀書第三、作息飲水往下放；早午晚橫向 3 欄 (早上左、中午中、晚上右) */
         @media (max-width: 700px) {
             body {
                 padding: 0;
@@ -781,6 +781,17 @@
             .input-group .btn-pink,
             .input-group .btn-secondary {
                 width: 100%;
+            }
+            .time-slots-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 6px;
+            }
+            .slot-card {
+                padding: 8px;
+            }
+            .slot-header {
+                font-size: 0.82rem;
+                gap: 3px;
             }
             .finance-summary {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -850,12 +861,6 @@
             </div>
             <div class="app-title">🌸 gigi的生活計劃</div>
         </div>
-        <!-- 審核端功能區塊 -->
-        <div style="display: flex; gap: 8px;">
-            <button class="auth-status-btn" id="edit-points-btn" onclick="openEditPointsModal()" style="display: none; background: #fff3e0; border-color: #ffe0b2; color: #e65100;">🛠️ 稽核點數微調</button>
-            <button class="auth-status-btn" id="auth-btn" onclick="handleAuthBtnClick()">🔑 審核端登入</button>
-            <button class="auth-status-btn" id="change-password-btn" onclick="openChangePasswordModal()" style="display:none;">🔒 修改密碼</button>
-        </div>
     </div>
 
     <!-- Body -->
@@ -902,7 +907,7 @@
                 <div class="week-strip" id="week-strip"></div>
             </div>
 
-            <!-- 作息與水份紀錄 -->
+            <!-- 作息與水份紀錄 (已往下放至側邊欄下方) -->
             <div class="card">
                 <div class="card-title">🌙 作息 & 水份獎勵</div><span id="routine-date-label" class="badge-tag"></span>
                 <div style="font-size: 0.72rem; color: var(--text-sub); margin-bottom: 8px;">
@@ -937,7 +942,7 @@
 
         </div>
 
-        <!-- Main Content Area (依照手機版要求排序：1. 早午晚排程 -> 2. 期末進度 -> 3. 每日讀書) -->
+        <!-- Main Content Area -->
         <div class="main-content">
 
             <!-- 今日截止作業提醒 -->
@@ -946,13 +951,12 @@
                 <ul id="today-due-list" style="margin-left: 20px; font-weight: normal; font-size: 0.88rem;"></ul>
             </div>
 
-            <!-- 1. 🌅 每日早午晚行程安排 (排在第一位，支援家教選項與時段選擇) -->
+            <!-- 1. 🌅 每日早午晚行程安排 -->
             <div class="card" style="border: 2px solid var(--pink-primary);">
                 <div class="card-header">
                     <div class="card-title">⏰ 每日早午晚行程安排 <span id="time-slot-date-label" class="badge-tag"></span></div>
                 </div>
 
-                <!-- 新增行程輸入框 -->
                 <div class="input-group">
                     <select id="slot-period" style="max-width: 100px;">
                         <option value="morning">🌅 早晨</option>
@@ -960,7 +964,6 @@
                         <option value="evening">🌙 晚上</option>
                     </select>
                     
-                    <!-- 從每週待辦事項 / 快速選項選取下拉選單 -->
                     <select id="slot-weekly-select" style="max-width: 160px;" onchange="syncSlotTaskInput(this)">
                         <option value="">-- 自待辦或家教選取 --</option>
                         <option value="👩‍🏫 家教課">👩‍🏫 家教課</option>
@@ -968,7 +971,6 @@
 
                     <input type="text" id="slot-task-input" placeholder="或手動輸入事項...">
                     
-                    <!-- 開始時間與結束時間 (家教或其他行程選填) -->
                     <div style="display:flex; gap:4px; align-items:center; flex:1; min-width:180px;">
                         <input type="time" id="slot-start-time" style="max-width:105px;" title="開始時間" placeholder="開始">
                         <span style="font-size:0.75rem; color:var(--text-sub);">至</span>
@@ -978,7 +980,6 @@
                     <button class="btn-pink" onclick="addSlotTask()">＋ 排入行程</button>
                 </div>
 
-                <!-- 早、午、晚 三欄展示 -->
                 <div class="time-slots-grid">
                     <div class="slot-card">
                         <div class="slot-header">🌅 早晨 時段</div>
@@ -995,20 +996,20 @@
                 </div>
             </div>
 
-            <!-- 2. 📖 每週期末讀書進度與考古題總覽 (排在第二位) -->
+            <!-- 2. 📖 每週期末讀書進度與考古題總覽 (含總完成率、各科完成率與各科考試時間標記) -->
             <div class="card" style="border: 2px solid var(--pink-accent);">
                 <div class="card-header">
                     <div class="card-title">📖 每週期末讀書進度與考古題總覽 <span id="weekly-study-date-label" class="badge-tag"></span></div>
+                    <span id="study-progress-percent-badge" class="badge-tag badge-pts" style="font-size:0.85rem; padding:4px 10px;">總完成率：0%</span>
                 </div>
 
-                <!-- 各科完整清單（點擊標籤切換：未規劃 ⇄ 排入計畫淺色。讀完勾選劃線） -->
                 <div class="exam-scope-card">
                     <div style="font-weight:bold; margin-bottom:4px; font-size:0.85rem;">📌 期末各科範圍與考古題清單 (點擊標籤：未規劃 ⇄ 排入計畫；點選勾選或雙擊可劃線完成)</div>
+                    <div style="font-size:0.75rem; color:var(--text-sub); margin-bottom:8px;">💡 總完成率與各科完成率均以「已讀完 (打勾或劃線)」計算！</div>
                     
                     <div class="exam-subjects-grid" id="all-subjects-books-grid"></div>
                 </div>
 
-                <!-- 手動分拆/排入當週進度區塊 -->
                 <div style="font-size:0.82rem; font-weight:bold; color:var(--pink-dark); margin: 12px 0 6px 0;">➕ 排入當週讀書進度：</div>
                 <div class="input-group">
                     <select id="weekly-study-subject" style="max-width: 140px;">
@@ -1032,7 +1033,7 @@
                 <ul class="item-list" id="weekly-study-list"></ul>
             </div>
 
-            <!-- 3. 📖 每日讀書進度 & 🏃‍♀️ 運動計劃 (排在第三位) -->
+            <!-- 3. 📖 每日讀書進度 & 🏃‍♀️ 運動計劃 -->
             <div class="main-grid">
 
                 <div class="card">
@@ -1281,7 +1282,7 @@
             尚未手動儲存
         </div>
         <div style="font-size:.7rem;color:var(--text-sub);text-align:center;margin-top:2px;">
-            📱 手機版已優化；按「儲存全部變更」後會同步到 Supabase，不同手機重新整理即可讀取。
+            📱 期末進度已新增各科完成率、總完成率與考試時間標記 (口解/口胚 12/18、組織/生理 12/21、胚胎/大體 12/22、OD 12/23)。
         </div>
     </div>
 </div>
@@ -1555,12 +1556,13 @@
     let subjectPillStates = {};
 
     const SUBJECT_EXAM_SCOPES = [
-        { subject: '組織', start: 8, end: 15, hasExam: true },
-        { subject: '胚胎', start: 1, end: 9, hasExam: true },
-        { subject: '大體', start: 9, end: 21, hasExam: true },
-        { subject: 'OD', start: 3, end: 8, hasExam: true },
-        { subject: '口解', start: 1, end: 11, hasExam: true },
-        { subject: '口胚', start: 6, end: 12, hasExam: true }
+        { subject: '組織', start: 8, end: 15, hasExam: true, examDate: '12/21' },
+        { subject: '生理', start: 1, end: 12, hasExam: true, examDate: '12/21' }, // 假設生理依原有用書或新增範圍
+        { subject: '胚胎', start: 1, end: 9, hasExam: true, examDate: '12/22' },
+        { subject: '大體', start: 9, end: 21, hasExam: true, examDate: '12/22' },
+        { subject: 'OD', start: 3, end: 8, hasExam: true, examDate: '12/23' },
+        { subject: '口解', start: 1, end: 11, hasExam: true, examDate: '12/18' },
+        { subject: '口胚', start: 6, end: 12, hasExam: true, examDate: '12/18' }
     ];
 
     let dailyPlans = {};
@@ -1809,21 +1811,20 @@
         const angerCard = document.getElementById('anger-card');
         const changePasswordBtn = document.getElementById('change-password-btn');
 
-        if (isAugLoggedIn) {
-            btn.innerText = '✅ 已驗證 (點擊登出)';
-            btn.style.background = '#c8e6c9';
-            btn.style.color = '#2e7d32';
-            editPtsBtn.style.display = 'inline-block';
-            angerCard.style.display = 'block';
-            changePasswordBtn.style.display = 'inline-block';
-        } else {
-            btn.innerText = '🔑 審核端登入';
-            btn.style.background = 'white';
-            btn.style.color = 'var(--pink-dark)';
-            editPtsBtn.style.display = 'none';
-            angerCard.style.display = 'none';
-            changePasswordBtn.style.display = 'none';
+        if (btn) {
+            if (isAugLoggedIn) {
+                btn.innerText = '✅ 已驗證 (點擊登出)';
+                btn.style.background = '#c8e6c9';
+                btn.style.color = '#2e7d32';
+            } else {
+                btn.innerText = '🔑 審核端登入';
+                btn.style.background = 'white';
+                btn.style.color = 'var(--pink-dark)';
+            }
         }
+        if (editPtsBtn) editPtsBtn.style.display = isAugLoggedIn ? 'inline-block' : 'none';
+        if (angerCard) angerCard.style.display = isAugLoggedIn ? 'block' : 'none';
+        if (changePasswordBtn) changePasswordBtn.style.display = isAugLoggedIn ? 'inline-block' : 'none';
     }
 
     function triggerAngerRecord(deductPts, title) {
@@ -2325,20 +2326,33 @@
         saveAllLists();
     }
 
-    /* 📖 期末所有科目範圍與考古題 */
+    /* 📖 期末所有科目範圍與考古題 (含各科完成率、總完成率、考試時間) */
     function renderAllSubjectsExamScopeGrid() {
         const grid = document.getElementById('all-subjects-books-grid');
         if (!grid) return;
         grid.innerHTML = '';
 
+        let totalBooksCount = 0;
+        let completedBooksCount = 0;
+
         SUBJECT_EXAM_SCOPES.forEach(item => {
             const box = document.createElement('div');
             box.className = 'subject-box';
 
+            let subjTotal = 0;
+            let subjCompleted = 0;
+
             let pillsHTML = '';
             for (let b = item.start; b <= item.end; b++) {
+                totalBooksCount++;
+                subjTotal++;
                 const key = `${item.subject}_b${b}`;
                 const state = subjectPillStates[key] || 0; // 0:未規劃, 1:排入計畫(淺藍), 2:讀完劃掉
+                if (state === 2) {
+                    completedBooksCount++;
+                    subjCompleted++;
+                }
+
                 let classNames = 'book-pill';
                 if (state === 1) classNames += ' planned';
                 if (state === 2) classNames += ' done';
@@ -2347,8 +2361,15 @@
             }
 
             if (item.hasExam) {
+                totalBooksCount++;
+                subjTotal++;
                 const keyExam = `${item.subject}_exam`;
                 const stateExam = subjectPillStates[keyExam] || 0;
+                if (stateExam === 2) {
+                    completedBooksCount++;
+                    subjCompleted++;
+                }
+
                 let examClass = 'book-pill';
                 if (stateExam === 1) examClass += ' planned';
                 if (stateExam === 2) examClass += ' done';
@@ -2356,15 +2377,28 @@
                 pillsHTML += `<div class="${examClass}" style="font-weight:bold;" onclick="cyclePillState('${keyExam}')" title="點擊切換狀態：未規劃 ⇄ 排入計畫 ⇄ 讀完劃掉">📝 考古題</div>`;
             }
 
+            const subjPercent = subjTotal > 0 ? Math.round((subjCompleted / subjTotal) * 100) : 0;
+
             box.innerHTML = `
                 <div class="subject-head">
-                    <span>📚 ${item.subject}</span>
-                    <span style="font-size:0.75rem; color:var(--text-sub); font-weight:normal;">第 ${item.start}~${item.end} 本 + 考古題</span>
+                    <div>
+                        <span>📚 ${item.subject}</span>
+                        <span style="font-size:0.7rem; color:var(--pink-primary); background:var(--pink-soft); padding:1px 5px; border-radius:4px; margin-left:6px;">考試: ${item.examDate}</span>
+                    </div>
+                    <span style="font-size:0.75rem; color:var(--pink-dark); font-weight:bold;">${subjPercent}% (${subjCompleted}/${subjTotal})</span>
                 </div>
+                <div style="font-size:0.7rem; color:var(--text-sub); margin-bottom:4px;">範圍：第 ${item.start}~${item.end} 本 + 考古題</div>
                 <div class="book-pills">${pillsHTML}</div>
             `;
             grid.appendChild(box);
         });
+
+        // 計算總完成率
+        const percent = totalBooksCount > 0 ? Math.round((completedBooksCount / totalBooksCount) * 100) : 0;
+        const badge = document.getElementById('study-progress-percent-badge');
+        if (badge) {
+            badge.innerText = `總完成率：${percent}% (${completedBooksCount}/${totalBooksCount} 本)`;
+        }
     }
 
     function cyclePillState(key) {
@@ -2490,7 +2524,7 @@
 
     function saveWeeklyStudyPlans() { localStorage.setItem('gigi_planner_weekly_study', JSON.stringify(weeklyStudyPlans)); }
 
-    /* 🌅 每日早午晚行程安排 (含家教時段與自動帶入收入) */
+    /* 🌅 每日早午晚行程安排 (含家教選項、開始結束時間與自動帶入收入) */
     function getDailyTimeSlots(dateStr = selectedDateStr) {
         if (!dateTimeSlots[dateStr]) { dateTimeSlots[dateStr] = { morning: [], afternoon: [], evening: [] }; }
         return dateTimeSlots[dateStr];
@@ -2501,7 +2535,6 @@
         if (!select) return;
         select.innerHTML = '<option value="">-- 自待辦或家教選取 --</option>';
         
-        // 預設快速選項
         const tutorOpt = document.createElement('option');
         tutorOpt.value = '👩‍🏫 家教課';
         tutorOpt.textContent = '👩‍🏫 家教課';
@@ -2605,9 +2638,8 @@
 
         item.completed = checkbox.checked;
 
-        // 若為家教且勾選完成，自動依開始結束時間計算時數並帶入收入 ($1,200/hr)
         if (item.isTutor && item.completed && !item.tutorCredited) {
-            let hours = 2; // 預設 2 小時
+            let hours = 2;
             if (item.startTime && item.endTime) {
                 const [sh, sm] = item.startTime.split(':').map(Number);
                 const [eh, em] = item.endTime.split(':').map(Number);
@@ -2630,7 +2662,6 @@
             saveFinanceData();
             alert(`🎉 家教課程已完成打卡！已自動帶入家教收入 $${amount.toLocaleString()} (${hours} 小時) 到理財記帳中！`);
         } else if (item.isTutor && !item.completed && item.tutorCredited) {
-            // 取消勾選時提示
             alert('⚠️ 取消家教完成狀態，收入記錄仍保留於理財區，可手動刪除。');
         }
 
