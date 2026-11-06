@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <!-- version 2026-11-06-v10-final-interaction -->
+    <!-- version 2026-11-06-v11-mobile-layout-tutor -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gigi的生活計劃</title>
@@ -344,8 +344,8 @@
 
         .badge-pts { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
         .badge-want { background: #fde2e4; color: var(--pink-primary); border: 1px solid var(--pink-accent); }
-        .badge-range { background: #f0f4c3; color: #558b2f; border: 1px solid #dce775; opacity: 0.85; }
         .badge-time { background: #e0f7fa; color: #006064; border: 1px solid #b2ebf2; }
+        .badge-tutor { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
 
         .item input[type="checkbox"] {
             appearance: none;
@@ -501,7 +501,6 @@
             margin-bottom: 12px;
         }
 
-        /* 📖 期末讀書進度專區樣式 */
         .exam-scope-card {
             background: rgba(255, 240, 243, 0.6);
             border: 1px dashed var(--pink-accent);
@@ -556,8 +555,6 @@
             cursor: pointer;
             user-select: none;
             transition: all 0.2s;
-
-            /* 平常狀態（未排入計劃）：一般淡紅 */
             background: #fff0f3;
             color: var(--text-main);
             border: 1px solid #f4acb7;
@@ -567,7 +564,6 @@
             opacity: 0.85;
         }
 
-        /* 排入計畫：淺色高亮 */
         .book-pill.planned {
             background: #e0f2fe;
             color: #0369a1;
@@ -575,7 +571,6 @@
             font-weight: 600;
         }
 
-        /* 讀完劃掉槓掉 */
         .book-pill.done {
             background: #f1f5f9;
             color: #94a3b8;
@@ -732,7 +727,7 @@
             margin-bottom: 16px;
         }
 
-        /* 📱 手機版優化 */
+        /* 📱 手機版優化順序：主內容排序透過 DOM 結構調整為：早午晚 -> 期末進度 -> 每日讀書 */
         @media (max-width: 700px) {
             body {
                 padding: 0;
@@ -933,7 +928,7 @@
                 </div>
             </div>
 
-            <!-- 🌟 累積點數卡片 (側邊欄下方) -->
+            <!-- 🌟 累積點數卡片 -->
             <div class="points-card">
                 <div style="font-size:0.85rem; font-weight:bold; color:var(--pink-dark);">🌟 目前累積獎勵點數</div>
                 <div class="points-val" id="user-points-display">0.0</div>
@@ -942,7 +937,7 @@
 
         </div>
 
-        <!-- Main Content Area -->
+        <!-- Main Content Area (依照手機版要求排序：1. 早午晚排程 -> 2. 期末進度 -> 3. 每日讀書) -->
         <div class="main-content">
 
             <!-- 今日截止作業提醒 -->
@@ -951,7 +946,7 @@
                 <ul id="today-due-list" style="margin-left: 20px; font-weight: normal; font-size: 0.88rem;"></ul>
             </div>
 
-            <!-- 1. 🌅 每日早午晚行程安排 (依照要求移至最上方) -->
+            <!-- 1. 🌅 每日早午晚行程安排 (排在第一位，支援家教選項與時段選擇) -->
             <div class="card" style="border: 2px solid var(--pink-primary);">
                 <div class="card-header">
                     <div class="card-title">⏰ 每日早午晚行程安排 <span id="time-slot-date-label" class="badge-tag"></span></div>
@@ -965,15 +960,20 @@
                         <option value="evening">🌙 晚上</option>
                     </select>
                     
-                    <!-- 從每週待辦事項選取下拉選單 -->
+                    <!-- 從每週待辦事項 / 快速選項選取下拉選單 -->
                     <select id="slot-weekly-select" style="max-width: 160px;" onchange="syncSlotTaskInput(this)">
-                        <option value="">-- 自每週待辦選取 --</option>
+                        <option value="">-- 自待辦或家教選取 --</option>
+                        <option value="👩‍🏫 家教課">👩‍🏫 家教課</option>
                     </select>
 
                     <input type="text" id="slot-task-input" placeholder="或手動輸入事項...">
                     
-                    <!-- 限定時間 (選填) -->
-                    <input type="time" id="slot-time-input" style="max-width: 120px;" title="限定時間（選填）">
+                    <!-- 開始時間與結束時間 (家教或其他行程選填) -->
+                    <div style="display:flex; gap:4px; align-items:center; flex:1; min-width:180px;">
+                        <input type="time" id="slot-start-time" style="max-width:105px;" title="開始時間" placeholder="開始">
+                        <span style="font-size:0.75rem; color:var(--text-sub);">至</span>
+                        <input type="time" id="slot-end-time" style="max-width:105px;" title="結束時間" placeholder="結束">
+                    </div>
 
                     <button class="btn-pink" onclick="addSlotTask()">＋ 排入行程</button>
                 </div>
@@ -995,15 +995,15 @@
                 </div>
             </div>
 
-            <!-- 2. 📖 每週期末讀書進度與考古題總覽 -->
+            <!-- 2. 📖 每週期末讀書進度與考古題總覽 (排在第二位) -->
             <div class="card" style="border: 2px solid var(--pink-accent);">
                 <div class="card-header">
                     <div class="card-title">📖 每週期末讀書進度與考古題總覽 <span id="weekly-study-date-label" class="badge-tag"></span></div>
                 </div>
 
-                <!-- 各科完整清單（平常全列出、含考古題。點擊：未規劃 ⇄ 排入計畫淺色。雙擊或長按 / 或按鈕切換讀完劃線） -->
+                <!-- 各科完整清單（點擊標籤切換：未規劃 ⇄ 排入計畫淺色。讀完勾選劃線） -->
                 <div class="exam-scope-card">
-                    <div style="font-weight:bold; margin-bottom:4px; font-size:0.85rem;">📌 期末各科範圍與考古題清單 (點擊標籤：未規劃 ⇄ 排入計劃淺色；勾選右側或雙擊可劃線完成)</div>
+                    <div style="font-weight:bold; margin-bottom:4px; font-size:0.85rem;">📌 期末各科範圍與考古題清單 (點擊標籤：未規劃 ⇄ 排入計畫；點選勾選或雙擊可劃線完成)</div>
                     
                     <div class="exam-subjects-grid" id="all-subjects-books-grid"></div>
                 </div>
@@ -1032,7 +1032,7 @@
                 <ul class="item-list" id="weekly-study-list"></ul>
             </div>
 
-            <!-- 3. 📖 每日讀書進度 & 🏃‍♀️ 運動計劃 -->
+            <!-- 3. 📖 每日讀書進度 & 🏃‍♀️ 運動計劃 (排在第三位) -->
             <div class="main-grid">
 
                 <div class="card">
@@ -1170,7 +1170,7 @@
                 </ul>
             </div>
 
-            <!-- 7. 🎁 願望清單與點數兌換 (移至下方) -->
+            <!-- 7. 🎁 願望清單與點數兌換 -->
             <div class="card" style="border: 2px solid var(--pink-accent);">
                 <div class="card-header">
                     <div class="card-title">🎁 願望清單與點數兌換 (點數連動記帳)</div>
@@ -1187,7 +1187,7 @@
                 <ul class="item-list" id="wishlist-container"></ul>
             </div>
 
-            <!-- 8. 💰 記帳與預算管理系統 (移至下方) -->
+            <!-- 8. 💰 記帳與預算管理系統 -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">💰 理財記帳與預算管理 (新增「想要」將自動扣點)</div>
@@ -1552,7 +1552,6 @@
     let weeklyStudyPlans = {}; 
     let dateTimeSlots = {};
 
-    // 各科期末範圍與考古題狀態儲存 (0:未規劃, 1:排入計畫淺色, 2:讀完劃掉)
     let subjectPillStates = {};
 
     const SUBJECT_EXAM_SCOPES = [
@@ -2326,7 +2325,7 @@
         saveAllLists();
     }
 
-    /* 📖 期末所有科目範圍與考古題 (三態：0未規劃 -> 1排入計劃淺色 -> 2讀完劃掉) */
+    /* 📖 期末所有科目範圍與考古題 */
     function renderAllSubjectsExamScopeGrid() {
         const grid = document.getElementById('all-subjects-books-grid');
         if (!grid) return;
@@ -2370,7 +2369,6 @@
 
     function cyclePillState(key) {
         const current = subjectPillStates[key] || 0;
-        // 0 (未規劃) -> 1 (排入計畫/淺藍) -> 2 (讀完劃掉) -> 0
         const next = (current + 1) % 3;
         subjectPillStates[key] = next;
         saveSubjectPillStates();
@@ -2382,7 +2380,7 @@
         localStorage.setItem('gigi_planner_subject_pill_states', JSON.stringify(subjectPillStates));
     }
 
-    /* 📚 每週讀書進度專區 (當週自訂拆分進度) */
+    /* 📚 每週讀書進度專區 */
     function getWeeklyStudyKey(dateStr = selectedDateStr) { return getWeekStartStr(dateStr); }
 
     function getWeeklyStudyList(dateStr = selectedDateStr) {
@@ -2492,7 +2490,7 @@
 
     function saveWeeklyStudyPlans() { localStorage.setItem('gigi_planner_weekly_study', JSON.stringify(weeklyStudyPlans)); }
 
-    /* 🌅 每日早午晚行程安排 (Time Slots) */
+    /* 🌅 每日早午晚行程安排 (含家教時段與自動帶入收入) */
     function getDailyTimeSlots(dateStr = selectedDateStr) {
         if (!dateTimeSlots[dateStr]) { dateTimeSlots[dateStr] = { morning: [], afternoon: [], evening: [] }; }
         return dateTimeSlots[dateStr];
@@ -2501,7 +2499,13 @@
     function populateWeeklyTaskSelect() {
         const select = document.getElementById('slot-weekly-select');
         if (!select) return;
-        select.innerHTML = '<option value="">-- 自每週待辦選取 --</option>';
+        select.innerHTML = '<option value="">-- 自待辦或家教選取 --</option>';
+        
+        // 預設快速選項
+        const tutorOpt = document.createElement('option');
+        tutorOpt.value = '👩‍🏫 家教課';
+        tutorOpt.textContent = '👩‍🏫 家教課';
+        select.appendChild(tutorOpt);
 
         const groupScope = document.createElement('optgroup');
         groupScope.label = '📖 期末範圍與考古題';
@@ -2556,18 +2560,38 @@
     function addSlotTask() {
         const period = document.getElementById('slot-period').value;
         const taskInput = document.getElementById('slot-task-input');
-        const timeInput = document.getElementById('slot-time-input');
+        const startTimeInput = document.getElementById('slot-start-time');
+        const endTimeInput = document.getElementById('slot-end-time');
 
         const taskText = taskInput.value.trim();
-        const timeVal = timeInput.value;
+        const startTime = startTimeInput.value;
+        const endTime = endTimeInput.value;
 
         if (!taskText) { alert('請選擇或輸入要做的事情！'); return; }
 
+        const isTutor = taskText.includes('家教');
+        let timeStr = '';
+        if (startTime && endTime) {
+            timeStr = `${startTime} ~ ${endTime}`;
+        } else if (startTime) {
+            timeStr = `${startTime} 起`;
+        }
+
         const slots = getDailyTimeSlots(selectedDateStr);
-        slots[period].push({ id: 'slot-' + Date.now(), text: taskText, time: timeVal || '', completed: false });
+        slots[period].push({
+            id: 'slot-' + Date.now(),
+            text: taskText,
+            time: timeStr,
+            startTime: startTime,
+            endTime: endTime,
+            isTutor: isTutor,
+            tutorCredited: false,
+            completed: false
+        });
 
         taskInput.value = '';
-        timeInput.value = '';
+        startTimeInput.value = '';
+        endTimeInput.value = '';
         document.getElementById('slot-weekly-select').value = '';
 
         saveTimeSlots();
@@ -2577,7 +2601,41 @@
     function toggleSlotTask(period, id, checkbox) {
         const slots = getDailyTimeSlots(selectedDateStr);
         const item = slots[period].find(x => x.id === id);
-        if (item) { item.completed = checkbox.checked; saveTimeSlots(); renderTimeSlots(); }
+        if (!item) return;
+
+        item.completed = checkbox.checked;
+
+        // 若為家教且勾選完成，自動依開始結束時間計算時數並帶入收入 ($1,200/hr)
+        if (item.isTutor && item.completed && !item.tutorCredited) {
+            let hours = 2; // 預設 2 小時
+            if (item.startTime && item.endTime) {
+                const [sh, sm] = item.startTime.split(':').map(Number);
+                const [eh, em] = item.endTime.split(':').map(Number);
+                const diffMins = (eh * 60 + em) - (sh * 60 + sm);
+                if (diffMins > 0) {
+                    hours = parseFloat((diffMins / 60).toFixed(1));
+                }
+            }
+            const amount = hours * 1200;
+            financeItems.push({
+                id: 'fin-tutor-' + Date.now(),
+                name: `👩‍🏫 家教收入 (${hours} 小時)`,
+                amount: amount,
+                type: 'Income',
+                kind: '家教',
+                date: selectedDateStr
+            });
+            item.tutorCredited = true;
+            recalculateFinance();
+            saveFinanceData();
+            alert(`🎉 家教課程已完成打卡！已自動帶入家教收入 $${amount.toLocaleString()} (${hours} 小時) 到理財記帳中！`);
+        } else if (item.isTutor && !item.completed && item.tutorCredited) {
+            // 取消勾選時提示
+            alert('⚠️ 取消家教完成狀態，收入記錄仍保留於理財區，可手動刪除。');
+        }
+
+        saveTimeSlots();
+        renderTimeSlots();
     }
 
     function deleteSlotTask(period, id) {
@@ -2607,9 +2665,11 @@
             items.forEach(item => {
                 const li = document.createElement('li');
                 li.className = 'item' + (item.completed ? ' completed' : '');
+                const tutorBadge = item.isTutor ? `<span class="badge-tag badge-tutor">家教</span>` : '';
                 li.innerHTML = `
                     <div class="item-left">
                         <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleSlotTask('${p}', '${item.id}', this)">
+                        ${tutorBadge}
                         ${item.time ? `<span class="badge-tag badge-time">⏰ ${item.time}</span>` : ''}
                         <span>${item.text}</span>
                     </div>
