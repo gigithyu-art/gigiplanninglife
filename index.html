@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <!-- version 2026-11-06-v15-added-gross-and-histo-lab-scopes -->
+    <!-- version 2026-11-07-v16-study-points-weekly-sync -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gigi的生活計劃</title>
@@ -882,19 +882,19 @@
             .main-content { display:contents; }
             .sidebar > * { order:20; }
             .main-content > * { order:30; }
-            /* 手機版主要閱讀順序：月曆 → 週曆 → 早午晚 → 截止計劃 → 段考 */
+            /* 手機版主要閱讀順序：月曆 → 週曆 → 快速跳轉 → 早午晚 → 截止計劃 → 段考 */
             .sidebar #calendar-section { order:1; }
             .sidebar #week-section { order:2; }
             .main-content > #schedule-section { order:3; }
             .main-content > #date-planner-section { order:4; }
             .main-content > #study-section { order:5; }
-            .main-content > .v2-nav { order:6; }
+            .main-content > .v2-nav { order:2.5; }
             .main-content > #today-due-alert { order:7; }
             .main-content > #daily-section { order:8; }
             .main-content > #timetable-section { order:9; }
             .sidebar #anger-card { order:20; }
             .v2-nav {
-                order:6;
+                order:2.5;
                 display:flex !important;
                 visibility:visible !important;
                 position:sticky;
@@ -920,6 +920,7 @@
         @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 
     </style>
+<!-- version 2026-11-08-weekly-carry-forward-nav-position -->
 </head>
 <body>
 
@@ -2585,7 +2586,55 @@
 
     function getWeeklyStudyList(dateStr = selectedDateStr) {
         const key = getWeeklyStudyKey(dateStr);
+        // 找出緊接在本週之前的一週，將上週排過的範圍帶到本週。
+        // 上週已完成的維持勾選；上週未完成的重新以未勾選狀態開始。
+        const previousWeekDate = new Date(key + 'T12:00:00');
+        previousWeekDate.setDate(previousWeekDate.getDate() - 7);
+        const previousWeekKey = formatDateStr(
+            previousWeekDate.getFullYear(), previousWeekDate.getMonth() + 1, previousWeekDate.getDate()
+        );
+        const previousWeekList = weeklyStudyPlans[previousWeekKey] || [];
+
         if (!weeklyStudyPlans[key]) weeklyStudyPlans[key] = [];
+
+        // 即使本週清單先前已建立，也補入上週排過但尚未完成的範圍。
+        // 以科目＋範圍去重，避免每次讀取清單都重複新增。
+        previousWeekList.forEach(previousItem => {
+            const pillKey = `${previousItem.subject}_b${previousItem.bookNum}`;
+            const exists = weeklyStudyPlans[key].some(item =>
+                item.subject === previousItem.subject && Number(item.bookNum) === Number(previousItem.bookNum)
+            );
+            if (!exists) {
+                const wasCompleted = !!previousItem.checked || subjectPillStates[pillKey] === 2;
+                weeklyStudyPlans[key].push({
+                    id: 'ws-carry-' + key + '-' + pillKey,
+                    subject: previousItem.subject,
+                    bookNum: Number(previousItem.bookNum),
+                    checked: wasCompleted,
+                    carriedForward: true
+                });
+                if (wasCompleted) subjectPillStates[pillKey] = 2;
+                else if (subjectPillStates[pillKey] !== 2) subjectPillStates[pillKey] = 1;
+            }
+        });
+
+        // 保留過去已完成的段考範圍，即使它不是上週才排入的項目。
+        const existingKeys = new Set(weeklyStudyPlans[key].map(item => `${item.subject}_b${item.bookNum}`));
+        Object.entries(subjectPillStates || {}).forEach(([pillKey, state]) => {
+            if (state !== 2 || !/_b\d+$/.test(pillKey) || existingKeys.has(pillKey)) return;
+            const match = pillKey.match(/^(.*)_b(\d+)$/);
+            if (!match) return;
+            weeklyStudyPlans[key].push({
+                id: 'ws-carry-' + key + '-' + pillKey,
+                subject: match[1],
+                bookNum: Number(match[2]),
+                checked: true,
+                carriedForward: true
+            });
+        });
+
+        saveSubjectPillStates();
+        saveWeeklyStudyPlans();
         return weeklyStudyPlans[key];
     }
 
@@ -2606,14 +2655,18 @@
         const list = getWeeklyStudyList(selectedDateStr);
 
         for (let b = start; b <= end; b++) {
-            list.push({
-                id: 'ws-' + Date.now() + '-' + b,
-                subject: subject,
-                bookNum: b,
-                checked: false
-            });
             const pillKey = `${subject}_b${b}`;
-            if (!subjectPillStates[pillKey]) subjectPillStates[pillKey] = 1;
+            // 曾經完成的範圍跨週保留完成；只有未完成的範圍在新週重新開始。
+            const alreadyAdded = list.some(x => x.subject === subject && Number(x.bookNum) === b);
+            if (!alreadyAdded) {
+                list.push({
+                    id: 'ws-' + Date.now() + '-' + b,
+                    subject: subject,
+                    bookNum: b,
+                    checked: subjectPillStates[pillKey] === 2
+                });
+            }
+            if (subjectPillStates[pillKey] !== 2) subjectPillStates[pillKey] = 1;
         }
 
         saveSubjectPillStates();
@@ -2629,7 +2682,15 @@
         if (item) {
             item.checked = checkbox.checked;
             const pillKey = `${item.subject}_b${item.bookNum}`;
-            subjectPillStates[pillKey] = checkbox.checked ? 2 : 1;
+            const completedElsewhere = Object.entries(weeklyStudyPlans || {}).some(([weekKey, weekItems]) =>
+                weekKey !== getWeeklyStudyKey(selectedDateStr) &&
+                (weekItems || []).some(x => `${x.subject}_b${x.bookNum}` === pillKey && x.checked)
+            ) || Object.values(dateTimeSlots || {}).some(day =>
+                ['morning', 'afternoon', 'evening'].some(period =>
+                    (day?.[period] || []).some(task => task.studyKey === pillKey && task.completed)
+                )
+            );
+            subjectPillStates[pillKey] = (checkbox.checked || completedElsewhere) ? 2 : 1;
             saveSubjectPillStates();
             renderAllSubjectsExamScopeGrid();
             saveWeeklyStudyPlans();
@@ -2802,29 +2863,40 @@
         renderTimeSlots();
     }
 
-    function hasOtherCompletedStudySlot(studyKey, excludeId) {
-        return Object.values(dateTimeSlots || {}).some(day =>
-            ['morning', 'afternoon', 'evening'].some(period =>
-                (day?.[period] || []).some(task => task.studyKey === studyKey && task.completed && task.id !== excludeId)
-            )
-        );
+    function hasOtherCompletedStudySlot(studyKey, weekKey, excludeId) {
+        return Object.entries(dateTimeSlots || {}).some(([dateStr, day]) => {
+            if (getWeekStartStr(dateStr) !== weekKey) return false;
+            return ['morning', 'afternoon', 'evening'].some(period =>
+                (day?.[period] || []).some(task =>
+                    task.studyKey === studyKey && task.completed && task.id !== excludeId
+                )
+            );
+        });
     }
 
     function saveStudyRewardLedger() {
         localStorage.setItem('gigi_planner_study_rewarded_keys', JSON.stringify(studyRewardedKeys));
     }
 
-    function syncStudyScopeState(studyKey, completed) {
+    function syncStudyScopeState(studyKey, completed, weekKey) {
         if (!studyKey) return;
-        subjectPillStates[studyKey] = completed ? 2 : 1;
-        saveSubjectPillStates();
 
-        // 若該項目也存在於每週排入清單，同步更新其完成狀態。
-        Object.values(weeklyStudyPlans || {}).forEach(list => {
-            (list || []).forEach(plan => {
-                if (`${plan.subject}_b${plan.bookNum}` === studyKey) plan.checked = completed;
-            });
+        // 只更新本週清單；歷史週已完成的紀錄保留，不會被新週的取消打卡覆蓋。
+        const weekList = weeklyStudyPlans[weekKey] || [];
+        weekList.forEach(plan => {
+            if (`${plan.subject}_b${plan.bookNum}` === studyKey) plan.checked = completed;
         });
+
+        const completedInAnyWeek = Object.values(weeklyStudyPlans || {}).some(list =>
+            (list || []).some(plan => `${plan.subject}_b${plan.bookNum}` === studyKey && plan.checked)
+        );
+        const completedInAnySchedule = Object.values(dateTimeSlots || {}).some(day =>
+            ['morning', 'afternoon', 'evening'].some(period =>
+                (day?.[period] || []).some(task => task.studyKey === studyKey && task.completed)
+            )
+        );
+        subjectPillStates[studyKey] = (completed || completedInAnyWeek || completedInAnySchedule) ? 2 : 1;
+        saveSubjectPillStates();
         saveWeeklyStudyPlans();
         renderAllSubjectsExamScopeGrid();
         renderWeeklyStudyPlans();
@@ -2834,21 +2906,24 @@
     function updateStudyScheduleReward(item, completed) {
         const key = item.studyKey;
         if (!key) return;
+        const weekKey = getWeekStartStr(selectedDateStr);
+        // 每個「週次＋讀書範圍」各自領一次，避免跨週被舊紀錄擋住。
+        const rewardKey = `${weekKey}::${key}`;
         if (completed) {
-            if (!studyRewardedKeys[key] && !hasOtherCompletedStudySlot(key, item.id)) {
+            if (!studyRewardedKeys[rewardKey] && !hasOtherCompletedStudySlot(key, weekKey, item.id)) {
                 addPoints(2);
-                studyRewardedKeys[key] = true;
+                studyRewardedKeys[rewardKey] = true;
                 saveStudyRewardLedger();
             }
-            syncStudyScopeState(key, true);
+            syncStudyScopeState(key, true, weekKey);
         } else {
-            const anotherCompleted = hasOtherCompletedStudySlot(key, item.id);
-            if (!anotherCompleted && studyRewardedKeys[key]) {
+            const anotherCompleted = hasOtherCompletedStudySlot(key, weekKey, item.id);
+            if (!anotherCompleted && studyRewardedKeys[rewardKey]) {
                 deductPoints(2);
-                delete studyRewardedKeys[key];
+                delete studyRewardedKeys[rewardKey];
                 saveStudyRewardLedger();
             }
-            syncStudyScopeState(key, anotherCompleted);
+            syncStudyScopeState(key, anotherCompleted, weekKey);
         }
     }
 
