@@ -1023,8 +1023,8 @@
 
             <nav class="v2-nav" aria-label="快速跳轉至下方功能區">
                 <a href="#schedule-section">⏰ 每日行程</a>
-                <a href="#study-section">📚 讀書進度</a>
-                <a href="#daily-section">🌿 每日任務</a>
+                <a href="#study-section">📚 期末範圍</a>
+                <a href="#daily-section">🏃‍♀️ 運動計劃</a>
                 <a href="#timetable-section">🏫 課表</a>
                 <a href="#health-section">💊 健康紀錄</a>
                 <a href="#rewards-section">🎁 願望獎勵</a>
@@ -1077,10 +1077,10 @@
                 </div>
             </div>
 
-            <!-- 2. 📖 每週期末讀書進度與考古題總覽 (含總完成率、各科完成率與各科考試時間標記) -->
+            <!-- 2. 📖 期末各科範圍與考古題 (含總完成率、各科完成率與各科考試時間標記) -->
             <div class="card" id="study-section" style="border: 2px solid var(--pink-accent);">
                 <div class="card-header">
-                    <div class="card-title">📖 每週期末讀書進度與考古題總覽 <span id="weekly-study-date-label" class="badge-tag"></span></div>
+                    <div class="card-title">📖 期末各科範圍與考古題 <span id="weekly-study-date-label" class="badge-tag"></span></div>
                     <span id="study-progress-percent-badge" class="badge-tag badge-pts" style="font-size:0.85rem; padding:4px 10px;">總完成率：0%</span>
                 </div>
 
@@ -1091,7 +1091,7 @@
                     <div class="exam-subjects-grid" id="all-subjects-books-grid"></div>
                 </div>
 
-                <div style="font-size:0.82rem; font-weight:bold; color:var(--pink-dark); margin: 12px 0 6px 0;">➕ 排入當週讀書進度：</div>
+                <div style="font-size:0.82rem; font-weight:bold; color:var(--pink-dark); margin: 12px 0 6px 0;">➕ 排入當週讀書範圍：</div>
                 <div class="input-group">
                     <select id="weekly-study-subject" style="max-width: 140px;">
                         <option value="生理">生理</option>
@@ -1114,34 +1114,8 @@
                 <ul class="item-list" id="weekly-study-list"></ul>
             </div>
 
-            <!-- 3. 📖 每日讀書進度 & 🏃‍♀️ 運動計劃 -->
+            <!-- 🏃‍♀️ 運動計劃（讀書完成點數改由早午晚行程打卡） -->
             <div class="main-grid" id="daily-section">
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">📖 每日讀書進度 <span id="study-date-label" class="badge-tag"></span></div>
-                    </div>
-                    <div style="font-size:0.75rem;color:var(--text-sub);margin:-4px 0 10px;">📚 讀書每 2 小時 +1 點（依實際填寫時數計算）</div>
-                    <div class="input-group">
-                        <select id="study-subject" style="max-width:130px;">
-                            <option value="生理">生理</option>
-                            <option value="胚胎">胚胎</option>
-                            <option value="大體">大體</option>
-                            <option value="大體實">大體實</option>
-                            <option value="組織">組織</option>
-                            <option value="組織實">組織實</option>
-                            <option value="OD">OD</option>
-                            <option value="OD實">OD實</option>
-                            <option value="口解">口解</option>
-                            <option value="口胚">口胚</option>
-                        </select>
-                        <input type="text" id="study-chapter" placeholder="章節/本數 (如: 第 3 本或考古題)">
-                        <input type="number" id="study-hours" min="0.5" step="0.5" value="2" placeholder="時數" style="max-width:80px;">
-                        <button class="btn-pink" onclick="addStudyTask()">新增</button>
-                    </div>
-                    <ul class="item-list" id="study-list"></ul>
-                </div>
-
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">🏃‍♀️ 運動計劃 <span id="sport-date-label" class="badge-tag"></span></div>
@@ -1548,7 +1522,8 @@
         'gigi_planner_daily_plans',
         'gigi_planner_weekly_study',
         'gigi_planner_time_slots',
-        'gigi_planner_subject_pill_states'
+        'gigi_planner_subject_pill_states',
+        'gigi_planner_study_rewarded_keys'
     ];
 
     async function loadCloudData() {
@@ -1639,6 +1614,7 @@
     let dateTimeSlots = {};
 
     let subjectPillStates = {};
+    let studyRewardedKeys = {}; // 每本書／每個範圍只領一次 +2 點，取消最後一個完成打卡時扣回
 
     const SUBJECT_EXAM_SCOPES = [
         { subject: '組織', start: 8, end: 15, hasExam: true, examDate: '12/21' },
@@ -2730,6 +2706,7 @@
                 const itemLabel = parts[1] === 'exam' ? '考古題' : (parts[1].startsWith('b') ? `第 ${parts[1].replace('b','')} 本` : parts[1]);
                 const opt = document.createElement('option');
                 opt.value = `${subj} ${itemLabel}`;
+                opt.dataset.studyKey = k;
                 opt.textContent = `${subj} ${itemLabel} ${st === 2 ? ' (已讀完)' : ''}`;
                 groupScope.appendChild(opt);
             }
@@ -2743,6 +2720,7 @@
             studyList.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = `${item.subject} 第${item.bookNum}本`;
+                opt.dataset.studyKey = `${item.subject}_b${item.bookNum}`;
                 opt.textContent = `${item.subject} 第${item.bookNum}本 ${item.checked ? ' (已讀完)' : ''}`;
                 group.appendChild(opt);
             });
@@ -2778,6 +2756,8 @@
         const endTimeInput = document.getElementById('slot-end-time');
 
         const taskText = taskInput.value.trim();
+        const selectedOption = document.getElementById('slot-weekly-select').selectedOptions[0];
+        const selectedStudyKey = selectedOption && selectedOption.value === taskText ? (selectedOption.dataset.studyKey || '') : '';
         const startTime = startTimeInput.value;
         const endTime = endTimeInput.value;
 
@@ -2795,6 +2775,7 @@
         slots[period].push({
             id: 'slot-' + Date.now(),
             text: taskText,
+            studyKey: selectedStudyKey || null,
             time: timeStr,
             startTime: startTime,
             endTime: endTime,
@@ -2812,12 +2793,64 @@
         renderTimeSlots();
     }
 
+    function hasOtherCompletedStudySlot(studyKey, excludeId) {
+        return Object.values(dateTimeSlots || {}).some(day =>
+            ['morning', 'afternoon', 'evening'].some(period =>
+                (day?.[period] || []).some(task => task.studyKey === studyKey && task.completed && task.id !== excludeId)
+            )
+        );
+    }
+
+    function saveStudyRewardLedger() {
+        localStorage.setItem('gigi_planner_study_rewarded_keys', JSON.stringify(studyRewardedKeys));
+    }
+
+    function syncStudyScopeState(studyKey, completed) {
+        if (!studyKey) return;
+        subjectPillStates[studyKey] = completed ? 2 : 1;
+        saveSubjectPillStates();
+
+        // 若該項目也存在於每週排入清單，同步更新其完成狀態。
+        Object.values(weeklyStudyPlans || {}).forEach(list => {
+            (list || []).forEach(plan => {
+                if (`${plan.subject}_b${plan.bookNum}` === studyKey) plan.checked = completed;
+            });
+        });
+        saveWeeklyStudyPlans();
+        renderAllSubjectsExamScopeGrid();
+        renderWeeklyStudyPlans();
+        populateWeeklyTaskSelect();
+    }
+
+    function updateStudyScheduleReward(item, completed) {
+        const key = item.studyKey;
+        if (!key) return;
+        if (completed) {
+            if (!studyRewardedKeys[key] && !hasOtherCompletedStudySlot(key, item.id)) {
+                addPoints(2);
+                studyRewardedKeys[key] = true;
+                saveStudyRewardLedger();
+            }
+            syncStudyScopeState(key, true);
+        } else {
+            const anotherCompleted = hasOtherCompletedStudySlot(key, item.id);
+            if (!anotherCompleted && studyRewardedKeys[key]) {
+                deductPoints(2);
+                delete studyRewardedKeys[key];
+                saveStudyRewardLedger();
+            }
+            syncStudyScopeState(key, anotherCompleted);
+        }
+    }
+
     function toggleSlotTask(period, id, checkbox) {
         const slots = getDailyTimeSlots(selectedDateStr);
         const item = slots[period].find(x => x.id === id);
         if (!item) return;
 
+        const wasCompleted = !!item.completed;
         item.completed = checkbox.checked;
+        if (item.studyKey && wasCompleted !== item.completed) updateStudyScheduleReward(item, item.completed);
 
         if (item.isTutor && item.completed && !item.tutorCredited) {
             let hours = 2;
@@ -2852,6 +2885,8 @@
 
     function deleteSlotTask(period, id) {
         const slots = getDailyTimeSlots(selectedDateStr);
+        const item = slots[period].find(x => x.id === id);
+        if (item && item.studyKey && item.completed) updateStudyScheduleReward(item, false);
         slots[period] = slots[period].filter(x => x.id !== id);
         saveTimeSlots();
         renderTimeSlots();
@@ -2878,10 +2913,12 @@
                 const li = document.createElement('li');
                 li.className = 'item' + (item.completed ? ' completed' : '');
                 const tutorBadge = item.isTutor ? `<span class="badge-tag badge-tutor">家教</span>` : '';
+                const studyBadge = item.studyKey ? `<span class="badge-tag badge-pts">讀完 +2點</span>` : '';
                 li.innerHTML = `
                     <div class="item-left">
                         <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleSlotTask('${p}', '${item.id}', this)">
                         ${tutorBadge}
+                        ${studyBadge}
                         ${item.time ? `<span class="badge-tag badge-time">⏰ ${item.time}</span>` : ''}
                         <span>${escapeHTML(item.text)}</span>
                     </div>
@@ -2962,22 +2999,24 @@
 
     function renderDailyPlans() {
         const plan = getDailyPlan(selectedDateStr);
-        const studyList = document.getElementById('study-list');
+        const studyList = document.getElementById('study-list'); // 舊版資料保留相容，但不再顯示獨立讀書欄
         const sportList = document.getElementById('sport-list');
-        studyList.innerHTML = '';
-        sportList.innerHTML = '';
+        if (studyList) studyList.innerHTML = '';
+        if (sportList) sportList.innerHTML = '';
 
         const dateLabel = selectedDateStr === todayStr ? '今天' : selectedDateStr;
-        document.getElementById('study-date-label').innerText = dateLabel;
-        document.getElementById('sport-date-label').innerText = dateLabel;
+        const studyDateLabel = document.getElementById('study-date-label');
+        const sportDateLabel = document.getElementById('sport-date-label');
+        if (studyDateLabel) studyDateLabel.innerText = dateLabel;
+        if (sportDateLabel) sportDateLabel.innerText = dateLabel;
 
-        renderPlanItems(studyList, plan.study, '讀書');
-        renderPlanItems(sportList, plan.sport, '運動');
+        if (studyList) renderPlanItems(studyList, plan.study, '讀書');
+        if (sportList) renderPlanItems(sportList, plan.sport, '運動');
 
         if (!plan.sport.some(x => x.id === 'sport-core')) {
             plan.sport.unshift({id:'sport-core', text:'練核心 10 分鐘', pts:0.2, checked:false, fixed:true});
         }
-        if (!sportList.querySelector('[data-id="sport-core"]')) renderPlanItems(sportList, plan.sport, '運動');
+        if (sportList && !sportList.querySelector('[data-id="sport-core"]')) renderPlanItems(sportList, plan.sport, '運動');
         updateDashboardOverview();
     }
 
@@ -3374,6 +3413,9 @@
 
         const savedPillStates = localStorage.getItem('gigi_planner_subject_pill_states');
         if (savedPillStates) { try { subjectPillStates = JSON.parse(savedPillStates) || {}; } catch(e) { subjectPillStates = {}; } }
+
+        const savedStudyRewardedKeys = localStorage.getItem('gigi_planner_study_rewarded_keys');
+        if (savedStudyRewardedKeys) { try { studyRewardedKeys = JSON.parse(savedStudyRewardedKeys) || {}; } catch(e) { studyRewardedKeys = {}; } }
 
         const savedWishlist = localStorage.getItem('gigi_planner_wishlist');
         if (savedWishlist) wishlist = JSON.parse(savedWishlist);
