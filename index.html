@@ -876,15 +876,38 @@
         @media (max-width: 960px) { .sidebar { position:static; max-height:none; overflow:visible; } .app-body { grid-template-columns:1fr; } }
         @media (max-width:700px) {
             body { padding:0; }
-            .app-body { padding:12px; }
-            .v2-nav { top:54px; margin:0 -2px 12px; border-radius:12px; }
+            .app-body { display:flex; flex-direction:column; gap:12px; padding:12px; }
+            /* 手機版將側欄與主內容攤平，讓月曆、週曆、快速跳轉依序出現在頁面最上方 */
             .sidebar { display:contents; }
-            .sidebar #calendar-section { order:-3; }
-            .sidebar #week-section { order:-2; }
-            .sidebar #anger-card { order:-1; }
-            .main-content { order:0; }
-            .sidebar #routine-section { order:20; }
-            .sidebar #points-section { order:21; }
+            .main-content { display:contents; }
+            .sidebar > * { order:3; }
+            .main-content > * { order:5; }
+            .sidebar #calendar-section { order:1; }
+            .sidebar #week-section { order:2; }
+            .sidebar #anger-card { order:3; }
+            .v2-nav {
+                order:4;
+                display:flex !important;
+                visibility:visible !important;
+                position:sticky;
+                top:0;
+                z-index:100;
+                width:100%;
+                min-height:48px;
+                margin:0 0 4px;
+                padding:8px;
+                gap:8px;
+                overflow-x:auto;
+                overflow-y:hidden;
+                flex-wrap:nowrap;
+                border-radius:12px;
+                background:rgba(255,255,255,.98);
+                box-shadow:0 4px 14px rgba(181,74,98,.12);
+                -webkit-overflow-scrolling:touch;
+            }
+            .v2-nav a { display:inline-flex; align-items:center; min-height:34px; white-space:nowrap; }
+            .sidebar #routine-section { order:90; }
+            .sidebar #points-section { order:91; }
         }
         @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 
@@ -3368,7 +3391,7 @@
         const savedPassword = localStorage.getItem('gigi_planner_password');
         if (savedPassword) AUG_PASSWORD = savedPassword;
     }
-// V2.0 修正：快速跳轉採用明確的捲動控制，避免 sticky sidebar / overflow 容器攔截原生錨點。
+// 快速跳轉：支援桌面版與手機版，並確保手機版導覽列可見且能正確定位。
 document.addEventListener('DOMContentLoaded', () => {
     const quickNav = document.querySelector('.v2-nav');
     if (!quickNav) return;
@@ -3379,23 +3402,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = document.getElementById(targetId);
         if (!target) return;
         event.preventDefault();
-
-        const sidebar = target.closest('.sidebar');
-        const sidebarCanScroll = sidebar && window.getComputedStyle(sidebar).overflowY !== 'visible'
-            && sidebar.scrollHeight > sidebar.clientHeight;
-        if (sidebarCanScroll) {
-            const sidebarTop = sidebar.getBoundingClientRect().top;
-            const targetTop = target.getBoundingClientRect().top;
-            sidebar.scrollTo({ top: sidebar.scrollTop + targetTop - sidebarTop - 12, behavior: 'smooth' });
-        }
-
+        const isMobile = window.matchMedia('(max-width: 700px)').matches;
         const navHeight = quickNav.getBoundingClientRect().height;
-        const targetTopOnPage = target.getBoundingClientRect().top + window.scrollY;
-        const offset = window.innerWidth <= 960 ? navHeight + 76 : 28;
-        window.scrollTo({ top: Math.max(0, targetTopOnPage - offset), behavior: 'smooth' });
+        const topOffset = isMobile ? navHeight + 14 : 28;
         history.replaceState(null, '', `#${encodeURIComponent(targetId)}`);
+        const targetTop = target.getBoundingClientRect().top + window.scrollY - topOffset;
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
         target.setAttribute('tabindex', '-1');
         target.focus({ preventScroll: true });
+        link.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     });
 });
 
