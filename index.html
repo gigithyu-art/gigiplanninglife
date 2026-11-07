@@ -884,18 +884,17 @@
             .main-content > * { order:30; }
             /* 手機版主要閱讀順序：月曆 → 週曆 → 快速跳轉 → 早午晚 → 截止計劃 → 段考 */
             .sidebar #calendar-section { order:1; }
-            .sidebar #week-section { order:2; }
-            .main-content > .v2-nav { order:2.5; }
+            .main-content > #week-section { order:1; }
+            .main-content > .v2-nav { order:2; }
             .main-content > #schedule-section { order:3; }
             .main-content > #date-planner-section { order:4; }
             .main-content > #study-section { order:5; }
-            .main-content > .v2-nav { order:2.5; }
             .main-content > #today-due-alert { order:7; }
             .main-content > #daily-section { order:8; }
             .main-content > #timetable-section { order:9; }
             .sidebar #anger-card { order:20; }
-            .v2-nav {
-                order:2.5;
+            .main-content > .v2-nav {
+                order:2;
                 display:flex !important;
                 visibility:visible !important;
                 position:sticky;
@@ -922,6 +921,8 @@
 
     </style>
 <!-- version 2026-11-08-weekly-carry-nav-direct-pills -->
+<!-- version 2026-11-08-quick-nav-after-week -->
+<!-- version 2026-11-08-quick-nav-structural-fix -->
 </head>
 <body>
 
@@ -981,11 +982,7 @@
                 <div class="cal-grid" id="cal-dates"></div>
             </div>
 
-            <!-- 週曆 Weekly View Widget -->
-            <div class="card" id="week-section">
-                <div class="card-title">🗓 本週總覽</div>
-                <div class="week-strip" id="week-strip"></div>
-            </div>
+
 
             <!-- 作息與水份紀錄 (已往下放至側邊欄下方) -->
             <div class="card" id="routine-section">
@@ -1025,10 +1022,10 @@
         <!-- Main Content Area -->
         <div class="main-content">
 
-            <!-- 今日截止作業提醒 -->
-            <div class="alert-box" id="today-due-alert">
-                <div style="font-weight: bold; margin-bottom: 6px; font-size: 0.95rem;">🚨 今日截止提醒！請檢核是否已完成：</div>
-                <ul id="today-due-list" style="margin-left: 20px; font-weight: normal; font-size: 0.88rem;"></ul>
+            <!-- 週曆 Weekly View Widget -->
+            <div class="card" id="week-section">
+                <div class="card-title">🗓 本週總覽</div>
+                <div class="week-strip" id="week-strip"></div>
             </div>
 
             <nav class="v2-nav" aria-label="快速跳轉至下方功能區">
@@ -1042,6 +1039,15 @@
                 <a href="#finance-section">💰 財務</a>
                 <a href="#calendar-section">📅 月曆</a>
             </nav>
+
+
+            <!-- 今日截止作業提醒 -->
+            <div class="alert-box" id="today-due-alert">
+                <div style="font-weight: bold; margin-bottom: 6px; font-size: 0.95rem;">🚨 今日截止提醒！請檢核是否已完成：</div>
+                <ul id="today-due-list" style="margin-left: 20px; font-weight: normal; font-size: 0.88rem;"></ul>
+            </div>
+
+
 
             <!-- 1. 🌅 每日早午晚行程安排 -->
             <div class="card" id="schedule-section" style="border: 2px solid var(--pink-primary);">
