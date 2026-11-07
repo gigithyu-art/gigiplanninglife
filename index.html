@@ -727,7 +727,7 @@
             margin-bottom: 16px;
         }
 
-        /* 📱 手機版版面優化：早午晚最前面、期末進度第二、每日讀書第三、作息飲水往下放；早午晚橫向 3 欄 (早上左、中午中、晚上右) */
+        /* 📱 手機版版面優化：月曆/週曆、快速跳轉、早午晚、截止計劃、期末範圍依序排列 */
         @media (max-width: 700px) {
             body {
                 padding: 0;
@@ -880,13 +880,21 @@
             /* 手機版將側欄與主內容攤平，讓月曆、週曆、快速跳轉依序出現在頁面最上方 */
             .sidebar { display:contents; }
             .main-content { display:contents; }
-            .sidebar > * { order:3; }
-            .main-content > * { order:5; }
+            .sidebar > * { order:20; }
+            .main-content > * { order:30; }
+            /* 手機版主要閱讀順序：月曆 → 週曆 → 早午晚 → 截止計劃 → 段考 */
             .sidebar #calendar-section { order:1; }
             .sidebar #week-section { order:2; }
-            .sidebar #anger-card { order:3; }
+            .main-content > #schedule-section { order:3; }
+            .main-content > #date-planner-section { order:4; }
+            .main-content > #study-section { order:5; }
+            .main-content > .v2-nav { order:6; }
+            .main-content > #today-due-alert { order:7; }
+            .main-content > #daily-section { order:8; }
+            .main-content > #timetable-section { order:9; }
+            .sidebar #anger-card { order:20; }
             .v2-nav {
-                order:4;
+                order:6;
                 display:flex !important;
                 visibility:visible !important;
                 position:sticky;
@@ -1023,6 +1031,7 @@
 
             <nav class="v2-nav" aria-label="快速跳轉至下方功能區">
                 <a href="#schedule-section">⏰ 每日行程</a>
+                <a href="#date-planner-section">📅 截止計劃</a>
                 <a href="#study-section">📚 期末範圍</a>
                 <a href="#daily-section">🏃‍♀️ 運動計劃</a>
                 <a href="#timetable-section">🏫 課表</a>
@@ -1077,7 +1086,24 @@
                 </div>
             </div>
 
-            <!-- 2. 📖 期末各科範圍與考古題 (含總完成率、各科完成率與各科考試時間標記) -->
+            <!-- 2. 📅 點選日期的預計截止作業 / 計劃管理 -->
+            <div class="card" id="date-planner-section">
+                <div class="card-header">
+                    <div class="card-title" id="date-planner-title">📅 預計截止作業與計劃</div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="date-task-input" placeholder="新增預計在此日期截止的作業或計劃...">
+                    <select id="date-task-diff" style="max-width: 130px;">
+                        <option value="0.2">簡單 (+0.2點)</option>
+                        <option value="0.5" selected>普通 (+0.5點)</option>
+                        <option value="1.0">困難 (+1.0點)</option>
+                    </select>
+                    <button class="btn-pink" onclick="addDateTask()">新增至此日期</button>
+                </div>
+                <ul class="item-list" id="date-task-list"></ul>
+            </div>
+
+            <!-- 3. 📖 期末各科範圍與考古題 (含總完成率、各科完成率與各科考試時間標記) -->
             <div class="card" id="study-section" style="border: 2px solid var(--pink-accent);">
                 <div class="card-header">
                     <div class="card-title">📖 期末各科範圍與考古題 <span id="weekly-study-date-label" class="badge-tag"></span></div>
@@ -1114,7 +1140,7 @@
                 <ul class="item-list" id="weekly-study-list"></ul>
             </div>
 
-            <!-- 🏃‍♀️ 運動計劃（讀書完成點數改由早午晚行程打卡） -->
+            <!-- 4. 🏃‍♀️ 運動計劃（讀書完成點數改由早午晚行程打卡） -->
             <div class="main-grid" id="daily-section">
                 <div class="card">
                     <div class="card-header">
@@ -1158,23 +1184,6 @@
                     </ul>
                 </div>
 
-            </div>
-
-            <!-- 4. 📅 點選日期的預計截止作業 / 計劃管理 -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title" id="date-planner-title">📅 預計截止作業與計劃</div>
-                </div>
-                <div class="input-group">
-                    <input type="text" id="date-task-input" placeholder="新增預計在此日期截止的作業或計劃...">
-                    <select id="date-task-diff" style="max-width: 130px;">
-                        <option value="0.2">簡單 (+0.2點)</option>
-                        <option value="0.5" selected>普通 (+0.5點)</option>
-                        <option value="1.0">困難 (+1.0點)</option>
-                    </select>
-                    <button class="btn-pink" onclick="addDateTask()">新增至此日期</button>
-                </div>
-                <ul class="item-list" id="date-task-list"></ul>
             </div>
 
             <!-- 5. 🏫 大學課表系統 -->
