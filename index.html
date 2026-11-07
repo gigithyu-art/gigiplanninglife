@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <!-- version 2026-11-06-v14-mobile-layout-study-progress-subjects-dates -->
+    <!-- version 2026-11-06-v15-added-gross-and-histo-lab-scopes -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gigi的生活計劃</title>
@@ -1282,7 +1282,7 @@
             尚未手動儲存
         </div>
         <div style="font-size:.7rem;color:var(--text-sub);text-align:center;margin-top:2px;">
-            📱 期末進度已新增各科完成率、總完成率與考試時間標記 (口解/口胚 12/18、組織/生理 12/21、胚胎/大體 12/22、OD 12/23)。
+            📱 期末進度已新增大體實與組織實範圍、各科完成率、總完成率與考試時間標記 (口解/口胚 12/18、組織/組織實/生理 12/21、胚胎/大體/大體實 12/22、OD 12/23)。
         </div>
     </div>
 </div>
@@ -1557,9 +1557,11 @@
 
     const SUBJECT_EXAM_SCOPES = [
         { subject: '組織', start: 8, end: 15, hasExam: true, examDate: '12/21' },
-        { subject: '生理', start: 1, end: 12, hasExam: true, examDate: '12/21' }, // 假設生理依原有用書或新增範圍
+        { subject: '組織實', items: ['integumentary system', 'respiratory system', 'lymph node', 'spleen', 'oral cavity', 'major salivary gland', 'liver', 'kidney'], hasExam: true, examDate: '12/21' },
+        { subject: '生理', start: 1, end: 12, hasExam: true, examDate: '12/21' },
         { subject: '胚胎', start: 1, end: 9, hasExam: true, examDate: '12/22' },
         { subject: '大體', start: 9, end: 21, hasExam: true, examDate: '12/22' },
+        { subject: '大體實', items: ['back', 'upper limb', 'heart', 'thorax', 'abdominal', 'pelvis'], hasExam: true, examDate: '12/22' },
         { subject: 'OD', start: 3, end: 8, hasExam: true, examDate: '12/23' },
         { subject: '口解', start: 1, end: 11, hasExam: true, examDate: '12/18' },
         { subject: '口胚', start: 6, end: 12, hasExam: true, examDate: '12/18' }
@@ -2341,23 +2343,44 @@
 
             let subjTotal = 0;
             let subjCompleted = 0;
-
             let pillsHTML = '';
-            for (let b = item.start; b <= item.end; b++) {
-                totalBooksCount++;
-                subjTotal++;
-                const key = `${item.subject}_b${b}`;
-                const state = subjectPillStates[key] || 0; // 0:未規劃, 1:排入計畫(淺藍), 2:讀完劃掉
-                if (state === 2) {
-                    completedBooksCount++;
-                    subjCompleted++;
+
+            if (item.items && Array.isArray(item.items)) {
+                // 自訂名稱項目的處理方式（如大體實、組織實）
+                item.items.forEach(itemName => {
+                    totalBooksCount++;
+                    subjTotal++;
+                    const key = `${item.subject}_${itemName}`;
+                    const state = subjectPillStates[key] || 0;
+                    if (state === 2) {
+                        completedBooksCount++;
+                        subjCompleted++;
+                    }
+
+                    let classNames = 'book-pill';
+                    if (state === 1) classNames += ' planned';
+                    if (state === 2) classNames += ' done';
+
+                    pillsHTML += `<div class="${classNames}" onclick="cyclePillState('${key}')" title="點擊切換狀態：未規劃 ⇄ 排入計畫 ⇄ 讀完劃掉">${itemName}</div>`;
+                });
+            } else if (item.start && item.end) {
+                // 數字本數的處理方式
+                for (let b = item.start; b <= item.end; b++) {
+                    totalBooksCount++;
+                    subjTotal++;
+                    const key = `${item.subject}_b${b}`;
+                    const state = subjectPillStates[key] || 0;
+                    if (state === 2) {
+                        completedBooksCount++;
+                        subjCompleted++;
+                    }
+
+                    let classNames = 'book-pill';
+                    if (state === 1) classNames += ' planned';
+                    if (state === 2) classNames += ' done';
+
+                    pillsHTML += `<div class="${classNames}" onclick="cyclePillState('${key}')" title="點擊切換狀態：未規劃 ⇄ 排入計畫 ⇄ 讀完劃掉">第 ${b} 本</div>`;
                 }
-
-                let classNames = 'book-pill';
-                if (state === 1) classNames += ' planned';
-                if (state === 2) classNames += ' done';
-
-                pillsHTML += `<div class="${classNames}" onclick="cyclePillState('${key}')" title="點擊切換狀態：未規劃 ⇄ 排入計畫 ⇄ 讀完劃掉">第 ${b} 本</div>`;
             }
 
             if (item.hasExam) {
@@ -2378,6 +2401,7 @@
             }
 
             const subjPercent = subjTotal > 0 ? Math.round((subjCompleted / subjTotal) * 100) : 0;
+            const scopeDesc = item.items ? item.items.join(', ') : `第 ${item.start}~${item.end} 本`;
 
             box.innerHTML = `
                 <div class="subject-head">
@@ -2387,7 +2411,7 @@
                     </div>
                     <span style="font-size:0.75rem; color:var(--pink-dark); font-weight:bold;">${subjPercent}% (${subjCompleted}/${subjTotal})</span>
                 </div>
-                <div style="font-size:0.7rem; color:var(--text-sub); margin-bottom:4px;">範圍：第 ${item.start}~${item.end} 本 + 考古題</div>
+                <div style="font-size:0.7rem; color:var(--text-sub); margin-bottom:4px;">範圍：${scopeDesc} + 考古題</div>
                 <div class="book-pills">${pillsHTML}</div>
             `;
             grid.appendChild(box);
@@ -2397,7 +2421,7 @@
         const percent = totalBooksCount > 0 ? Math.round((completedBooksCount / totalBooksCount) * 100) : 0;
         const badge = document.getElementById('study-progress-percent-badge');
         if (badge) {
-            badge.innerText = `總完成率：${percent}% (${completedBooksCount}/${totalBooksCount} 本)`;
+            badge.innerText = `總完成率：${percent}% (${completedBooksCount}/${totalBooksCount} 項)`;
         }
     }
 
@@ -2546,7 +2570,7 @@
             if (st === 1 || st === 2) {
                 const parts = k.split('_');
                 const subj = parts[0];
-                const itemLabel = parts[1] === 'exam' ? '考古題' : `第 ${parts[1].replace('b','')} 本`;
+                const itemLabel = parts[1] === 'exam' ? '考古題' : (parts[1].startsWith('b') ? `第 ${parts[1].replace('b','')} 本` : parts[1]);
                 const opt = document.createElement('option');
                 opt.value = `${subj} ${itemLabel}`;
                 opt.textContent = `${subj} ${itemLabel} ${st === 2 ? ' (已讀完)' : ''}`;
