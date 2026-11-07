@@ -865,7 +865,7 @@
         .btn-secondary { border-color: var(--pink-accent); color: var(--pink-dark); border-radius: 11px; }
         input[type="text"], input[type="number"], input[type="password"], input[type="time"], select { border-color: var(--pink-accent); border-radius: 11px; }
         .main-grid { gap: 16px; }
-        .v2-nav { position: sticky; top: 0; z-index: 35; display:flex; gap:7px; overflow-x:auto; padding: 9px; margin: 0 0 16px; border:1px solid var(--pink-accent); border-radius:15px; background:rgba(255,255,255,.94); backdrop-filter:blur(12px); scrollbar-width:thin; }
+        .v2-nav { position: relative; top: auto; z-index: 5; display:flex; gap:7px; overflow-x:auto; padding: 9px; margin: 0 0 16px; border:1px solid var(--pink-accent); border-radius:15px; background:rgba(255,255,255,.94); backdrop-filter:blur(12px); scrollbar-width:thin; }
         .v2-nav a { flex:0 0 auto; text-decoration:none; color:var(--pink-dark); background:var(--pink-soft); border:1px solid var(--pink-accent); border-radius:10px; padding:8px 12px; font-size:.78rem; font-weight:700; transition:.18s ease; }
         .v2-nav a:hover,.v2-nav a:focus { background:var(--pink-light-tag); border-color:var(--pink-primary); outline:none; }
         [id$="-section"] { scroll-margin-top: 82px; }
@@ -885,7 +885,6 @@
             /* 手機版主要閱讀順序：月曆 → 週曆 → 快速跳轉 → 早午晚 → 截止計劃 → 段考 */
             .sidebar #calendar-section { order:1; }
             .main-content > #week-section { order:1; }
-            .main-content > .v2-nav { order:2; }
             .main-content > #schedule-section { order:3; }
             .main-content > #date-planner-section { order:4; }
             .main-content > #study-section { order:5; }
@@ -893,16 +892,15 @@
             .main-content > #daily-section { order:8; }
             .main-content > #timetable-section { order:9; }
             .sidebar #anger-card { order:20; }
-            .main-content > .v2-nav {
-                order:2;
+            #week-section .v2-nav {
                 display:flex !important;
                 visibility:visible !important;
-                position:sticky;
-                top:0;
-                z-index:100;
+                position:relative;
+                top:auto;
+                z-index:2;
                 width:100%;
                 min-height:48px;
-                margin:0 0 4px;
+                margin:12px 0 0;
                 padding:8px;
                 gap:8px;
                 overflow-x:auto;
@@ -913,7 +911,7 @@
                 box-shadow:0 4px 14px rgba(181,74,98,.12);
                 -webkit-overflow-scrolling:touch;
             }
-            .v2-nav a { display:inline-flex; align-items:center; min-height:34px; white-space:nowrap; }
+            #week-section .v2-nav a { display:inline-flex; align-items:center; min-height:34px; white-space:nowrap; }
             .sidebar #routine-section { order:90; }
             .sidebar #points-section { order:91; }
         }
@@ -923,6 +921,7 @@
 <!-- version 2026-11-08-weekly-carry-nav-direct-pills -->
 <!-- version 2026-11-08-quick-nav-after-week -->
 <!-- version 2026-11-08-quick-nav-structural-fix -->
+<!-- version 2026-11-08-mobile-nav-inside-week -->
 </head>
 <body>
 
@@ -1026,9 +1025,8 @@
             <div class="card" id="week-section">
                 <div class="card-title">🗓 本週總覽</div>
                 <div class="week-strip" id="week-strip"></div>
-            </div>
 
-            <nav class="v2-nav" aria-label="快速跳轉至下方功能區">
+                <nav class="v2-nav" aria-label="快速跳轉至下方功能區">
                 <a href="#schedule-section">⏰ 每日行程</a>
                 <a href="#date-planner-section">📅 截止計劃</a>
                 <a href="#study-section">📚 期末範圍</a>
@@ -1039,6 +1037,7 @@
                 <a href="#finance-section">💰 財務</a>
                 <a href="#calendar-section">📅 月曆</a>
             </nav>
+            </div>
 
 
             <!-- 今日截止作業提醒 -->
