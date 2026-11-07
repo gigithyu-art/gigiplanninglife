@@ -31,7 +31,7 @@
         }
 
         body {
-            background: var(--bg-gradient);
+            background: #fff5f7;
             min-height: 100vh;
             padding: 24px 16px;
             color: var(--text-main);
@@ -751,6 +751,8 @@
             }
             .mac-dots { display: none; }
             .app-title { font-size: 0.95rem; }
+            .mac-titlebar > div:last-child { gap:4px !important; }
+            .mac-titlebar #auth-btn, .mac-titlebar #edit-points-btn, .mac-titlebar #change-password-btn { font-size:.68rem; padding:5px 7px; }
             .app-body {
                 display: flex;
                 flex-direction: column;
@@ -846,6 +848,46 @@
             .app-body { grid-template-columns: 1fr; }
         }
 
+
+        /* ===== V2.0 · Cream Pink / Modern Dashboard ===== */
+        body { padding: 22px; background: #fff5f7; background-attachment: initial; }
+        .mac-app { max-width: 1480px; border-radius: 26px; box-shadow: 0 24px 70px rgba(100,70,72,.12); }
+        .mac-titlebar { min-height: 62px; padding: 16px 24px; background: rgba(255,253,251,.92); }
+        .app-title { font-size: 1rem; letter-spacing: .2px; }
+        .app-body { grid-template-columns: 286px minmax(0,1fr); gap: 24px; padding: 24px; }
+        .sidebar { position: sticky; top: 18px; align-self: start; max-height: calc(100vh - 36px); overflow-y: auto; padding-right: 3px; }
+        .card { border: var(--border-glass); border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,.02); padding: 20px; margin-bottom: 16px; }
+        .card-title { color: var(--pink-dark); letter-spacing: .1px; }
+        .points-card { border: 2px solid var(--pink-accent); box-shadow: var(--shadow-soft); }
+        .points-val { color: var(--pink-primary); text-shadow: 0 2px 4px rgba(240,113,143,.2); }
+        .btn-pink { background: var(--pink-primary); border-radius: 11px; box-shadow: 0 4px 10px rgba(240,113,143,.13); }
+        .btn-pink:hover { background: var(--pink-dark); }
+        .btn-secondary { border-color: var(--pink-accent); color: var(--pink-dark); border-radius: 11px; }
+        input[type="text"], input[type="number"], input[type="password"], input[type="time"], select { border-color: var(--pink-accent); border-radius: 11px; }
+        .main-grid { gap: 16px; }
+        .v2-nav { position: sticky; top: 0; z-index: 35; display:flex; gap:7px; overflow-x:auto; padding: 9px; margin: 0 0 16px; border:1px solid var(--pink-accent); border-radius:15px; background:rgba(255,255,255,.94); backdrop-filter:blur(12px); scrollbar-width:thin; }
+        .v2-nav a { flex:0 0 auto; text-decoration:none; color:var(--pink-dark); background:var(--pink-soft); border:1px solid var(--pink-accent); border-radius:10px; padding:8px 12px; font-size:.78rem; font-weight:700; transition:.18s ease; }
+        .v2-nav a:hover,.v2-nav a:focus { background:var(--pink-light-tag); border-color:var(--pink-primary); outline:none; }
+        [id$="-section"] { scroll-margin-top: 82px; }
+        html { scroll-behavior: smooth; }
+        .save-all-wrap { border-top:1px solid rgba(226,204,199,.7); }
+        .save-all-btn { border-radius:13px; }
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline:3px solid rgba(189,116,124,.28); outline-offset:2px; }
+        @media (max-width: 960px) { .sidebar { position:static; max-height:none; overflow:visible; } .app-body { grid-template-columns:1fr; } }
+        @media (max-width:700px) {
+            body { padding:0; }
+            .app-body { padding:12px; }
+            .v2-nav { top:54px; margin:0 -2px 12px; border-radius:12px; }
+            .sidebar { display:contents; }
+            .sidebar #calendar-section { order:-3; }
+            .sidebar #week-section { order:-2; }
+            .sidebar #anger-card { order:-1; }
+            .main-content { order:0; }
+            .sidebar #routine-section { order:20; }
+            .sidebar #points-section { order:21; }
+        }
+        @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+
     </style>
 </head>
 <body>
@@ -859,7 +901,12 @@
                 <div class="dot dot-min"></div>
                 <div class="dot dot-max"></div>
             </div>
-            <div class="app-title">🌸 gigi的生活計劃</div>
+            <div class="app-title">🌸 gigi的生活計劃 <span style="font-size:.68rem;font-weight:600;color:#a47c80;">V2.0</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="btn-secondary" id="auth-btn" onclick="handleAuthBtnClick()">🔑 審核端登入</button>
+            <button class="btn-secondary" id="edit-points-btn" onclick="openEditPointsModal()" style="display:none;">✎ 編輯點數</button>
+            <button class="btn-secondary" id="change-password-btn" onclick="openChangePasswordModal()" style="display:none;">🔒 修改密碼</button>
         </div>
     </div>
 
@@ -880,7 +927,7 @@
             </div>
             
             <!-- 月曆 Calendar Widget -->
-            <div class="card">
+            <div class="card" id="calendar-section">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
                     <button class="btn-secondary" onclick="changeCalendarMonth(-1)" aria-label="上個月">‹</button>
                     <div class="calendar-header" id="month-title" style="margin-bottom:0;flex:1;">2026 年 8 月</div>
@@ -902,13 +949,13 @@
             </div>
 
             <!-- 週曆 Weekly View Widget -->
-            <div class="card">
+            <div class="card" id="week-section">
                 <div class="card-title">🗓 本週總覽</div>
                 <div class="week-strip" id="week-strip"></div>
             </div>
 
             <!-- 作息與水份紀錄 (已往下放至側邊欄下方) -->
-            <div class="card">
+            <div class="card" id="routine-section">
                 <div class="card-title">🌙 作息 & 水份獎勵</div><span id="routine-date-label" class="badge-tag"></span>
                 <div style="font-size: 0.72rem; color: var(--text-sub); margin-bottom: 8px;">
                     ⏰ 09:00前+0.5 | 10:00前+0.2 (自動計算/防刷點)<br>
@@ -934,7 +981,7 @@
             </div>
 
             <!-- 🌟 累積點數卡片 -->
-            <div class="points-card">
+            <div class="points-card" id="points-section">
                 <div style="font-size:0.85rem; font-weight:bold; color:var(--pink-dark);">🌟 目前累積獎勵點數</div>
                 <div class="points-val" id="user-points-display">0.0</div>
                 <div style="font-size:0.72rem; color:var(--text-sub);">達成目標即可兌換願望禮物 🎁</div>
@@ -951,8 +998,19 @@
                 <ul id="today-due-list" style="margin-left: 20px; font-weight: normal; font-size: 0.88rem;"></ul>
             </div>
 
+            <nav class="v2-nav" aria-label="快速跳轉至下方功能區">
+                <a href="#schedule-section">⏰ 每日行程</a>
+                <a href="#study-section">📚 讀書進度</a>
+                <a href="#daily-section">🌿 每日任務</a>
+                <a href="#timetable-section">🏫 課表</a>
+                <a href="#health-section">💊 健康紀錄</a>
+                <a href="#rewards-section">🎁 願望獎勵</a>
+                <a href="#finance-section">💰 財務</a>
+                <a href="#calendar-section">📅 月曆</a>
+            </nav>
+
             <!-- 1. 🌅 每日早午晚行程安排 -->
-            <div class="card" style="border: 2px solid var(--pink-primary);">
+            <div class="card" id="schedule-section" style="border: 2px solid var(--pink-primary);">
                 <div class="card-header">
                     <div class="card-title">⏰ 每日早午晚行程安排 <span id="time-slot-date-label" class="badge-tag"></span></div>
                 </div>
@@ -997,7 +1055,7 @@
             </div>
 
             <!-- 2. 📖 每週期末讀書進度與考古題總覽 (含總完成率、各科完成率與各科考試時間標記) -->
-            <div class="card" style="border: 2px solid var(--pink-accent);">
+            <div class="card" id="study-section" style="border: 2px solid var(--pink-accent);">
                 <div class="card-header">
                     <div class="card-title">📖 每週期末讀書進度與考古題總覽 <span id="weekly-study-date-label" class="badge-tag"></span></div>
                     <span id="study-progress-percent-badge" class="badge-tag badge-pts" style="font-size:0.85rem; padding:4px 10px;">總完成率：0%</span>
@@ -1034,7 +1092,7 @@
             </div>
 
             <!-- 3. 📖 每日讀書進度 & 🏃‍♀️ 運動計劃 -->
-            <div class="main-grid">
+            <div class="main-grid" id="daily-section">
 
                 <div class="card">
                     <div class="card-header">
@@ -1123,7 +1181,7 @@
             </div>
 
             <!-- 5. 🏫 大學課表系統 -->
-            <div class="card" style="margin-top: 10px;">
+            <div class="card" id="timetable-section" style="margin-top: 10px;">
                 <div class="card-header">
                     <div class="card-title">🏫 大學課表 (Schedule)</div>
                     <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:center;">
@@ -1153,7 +1211,7 @@
             </div>
 
             <!-- 6. 💊 吃藥提醒 -->
-            <div class="card">
+            <div class="card" id="health-section">
                 <div class="card-header">
                     <div class="card-title">💊 吃藥提醒</div>
                 </div>
@@ -1172,7 +1230,7 @@
             </div>
 
             <!-- 7. 🎁 願望清單與點數兌換 -->
-            <div class="card" style="border: 2px solid var(--pink-accent);">
+            <div class="card" id="rewards-section" style="border: 2px solid var(--pink-accent);">
                 <div class="card-header">
                     <div class="card-title">🎁 願望清單與點數兌換 (點數連動記帳)</div>
                     <span style="font-size:0.78rem; color:var(--text-sub);">🔐 兌換時需驗證登入</span>
@@ -1189,7 +1247,7 @@
             </div>
 
             <!-- 8. 💰 記帳與預算管理系統 -->
-            <div class="card">
+            <div class="card" id="finance-section">
                 <div class="card-header">
                     <div class="card-title">💰 理財記帳與預算管理 (新增「想要」將自動扣點)</div>
                     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -1328,7 +1386,7 @@
     <div class="modal-card">
         <div class="modal-title">🔐 審核端專屬驗證</div>
         <div style="font-size:0.85rem; color:var(--text-sub); margin-bottom: 12px;">
-            請輸入管理密碼驗證身份。
+            請輸入管理密碼。注意：目前仍是前端本機驗證，尚未完成 Supabase Auth 與資料表 RLS，不能作為真正的安全權限控管。
         </div>
         <input type="password" id="auth-password-input" placeholder="請輸入密碼..." style="width:100%; margin-bottom:12px;" onkeypress="if(event.key==='Enter') verifyAugPassword()">
         <div style="display:flex; justify-content:flex-end; gap:8px;">
@@ -1343,7 +1401,7 @@
     <div class="modal-card">
         <div class="modal-title">🔒 修改管理密碼</div>
         <div style="font-size:0.82rem; color:var(--text-sub); margin-bottom:12px;">
-            修改後的新密碼會在「儲存」時一併保存。
+            新密碼僅保存在此瀏覽器，不會上傳到雲端。跨裝置管理請改用正式身份驗證。
         </div>
         <input type="password" id="current-password-input" placeholder="目前密碼" style="width:100%; margin-bottom:8px;">
         <input type="password" id="new-password-input" placeholder="新密碼（至少 4 碼）" style="width:100%; margin-bottom:8px;">
@@ -1437,6 +1495,11 @@
 </div>
 
 <script>
+    // Render untrusted/user-entered strings as text, never executable HTML.
+    function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+
 
     // ☁️ Supabase 雲端同步設定
     const SUPABASE_URL = 'https://xvlapoanyzjygsnooslq.supabase.co';
@@ -1456,7 +1519,6 @@
         'neo_pink_planner_habits',
         'neo_pink_planner_finance',
         'neo_pink_planner_schedule',
-        'gigi_planner_password',
         'gigi_planner_routine_by_date',
         'gigi_planner_gym_by_week',
         'gigi_planner_course_attendance',
@@ -1612,6 +1674,75 @@
     let financeItems = [];
     const BASE_WEEKLY_WANT_LIMIT = 2000;
 
+    let cloudSyncReady = false;
+    let cloudSyncTimer = null;
+    let cloudSyncInFlight = false;
+    let cloudSyncAgain = false;
+
+    function updateDashboardOverview() {
+        const plan = (typeof getDailyPlan === 'function') ? getDailyPlan(selectedDateStr) : {study:[], sport:[]};
+        const tasks = [...(plan.study || []), ...(plan.sport || [])];
+        const completed = tasks.filter(task => task.checked).length;
+        const progress = document.getElementById('v2-task-progress');
+        const points = document.getElementById('v2-points');
+        const wishes = document.getElementById('v2-wishes');
+        const greeting = document.getElementById('v2-greeting');
+        const dateLine = document.getElementById('v2-date-line');
+        if (progress) progress.textContent = `${completed} / ${tasks.length}`;
+        if (points) points.textContent = Number(totalPoints || 0).toFixed(1);
+        if (wishes) wishes.textContent = String((wishlist || []).filter(item => !item.redeemed).length);
+        if (greeting) {
+            const hour = new Date().getHours();
+            greeting.textContent = hour < 11 ? '早安，今天也穩穩前進 ♡' : hour < 18 ? '午後好，記得留一點時間給自己 ♡' : '晚安，今天也辛苦了 ♡';
+        }
+        if (dateLine) {
+            const date = new Date(`${selectedDateStr}T00:00:00`);
+            dateLine.textContent = `${date.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'})} · 把重要的事安排好，也記得照顧自己。`;
+        }
+    }
+
+    function setSaveStatus(message, isError = false) {
+        const el = document.getElementById('save-status');
+        if (!el) return;
+        el.textContent = message;
+        el.style.color = isError ? '#b42332' : 'var(--text-sub)';
+    }
+
+    function scheduleCloudSync() {
+        if (!cloudSyncReady) return;
+        clearTimeout(cloudSyncTimer);
+        setSaveStatus('⏳ 已儲存於本機，準備同步雲端…');
+        cloudSyncTimer = setTimeout(runAutoCloudSync, 900);
+    }
+
+    async function runAutoCloudSync() {
+        if (!navigator.onLine) { setSaveStatus('⚠️ 目前離線；資料已保留在本機'); return; }
+        if (cloudSyncInFlight) { cloudSyncAgain = true; return; }
+        cloudSyncInFlight = true;
+        setSaveStatus('☁️ 正在自動同步…');
+        try {
+            await saveCloudData();
+            setSaveStatus(`✓ 雲端已同步 · ${new Date().toLocaleTimeString('zh-TW',{hour12:false})}`);
+        } catch (err) {
+            console.error('自動雲端同步失敗：', err);
+            setSaveStatus('⚠️ 雲端同步失敗；本機資料仍保留');
+        } finally {
+            cloudSyncInFlight = false;
+            if (cloudSyncAgain) { cloudSyncAgain = false; scheduleCloudSync(); }
+        }
+    }
+
+    function enableAutoCloudSync() {
+        if (cloudSyncReady) return;
+        const originalSetItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function(key, value) {
+            originalSetItem.call(this, key, value);
+            if (this === localStorage && CLOUD_SYNC_KEYS.includes(String(key))) scheduleCloudSync();
+        };
+        cloudSyncReady = true;
+        window.addEventListener('online', scheduleCloudSync);
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
         await loadCloudData();
 
@@ -1633,6 +1764,8 @@
         renderDailyPlans();
         recalculateFinance();
         updateAuthBtnUI();
+        updateDashboardOverview();
+        enableAutoCloudSync();
     });
 
     function formatDateStr(year, month, day) {
@@ -1838,7 +1971,7 @@
 
     function addPoints(pts) { totalPoints = parseFloat((totalPoints + pts).toFixed(1)); renderPointsUI(); savePointsData(); }
     function deductPoints(pts) { totalPoints = parseFloat((totalPoints - pts).toFixed(1)); renderPointsUI(); savePointsData(); }
-    function renderPointsUI() { document.getElementById('user-points-display').innerText = totalPoints.toFixed(1); }
+    function renderPointsUI() { document.getElementById('user-points-display').innerText = totalPoints.toFixed(1); updateDashboardOverview(); }
 
     function savePointsData() {
         localStorage.setItem('gigi_planner_points', totalPoints);
@@ -1914,7 +2047,7 @@
             li.innerHTML = `
                 <div class="item-left">
                     <span class="badge-tag badge-pts">需 ${item.reqPoints} 點</span>
-                    <span>${item.name} ($${item.price.toLocaleString()})</span>
+                    <span>${escapeHTML(item.name)} ($${Number(item.price).toLocaleString()})</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     ${item.redeemed 
@@ -1926,6 +2059,7 @@
             `;
             container.appendChild(li);
         });
+        updateDashboardOverview();
     }
 
     function saveWishlistData() { localStorage.setItem('gigi_planner_wishlist', JSON.stringify(wishlist)); }
@@ -2013,7 +2147,7 @@
                 ? `<span class="badge-tag" style="background:#c8e6c9;color:#2e7d32;">收入</span>`
                 : (item.kind === 'Need' ? `<span class="badge-tag">需要</span>` : `<span class="badge-tag badge-want">想要 (${item.deductedPts || 0}點)</span>`);
             li.innerHTML = `
-                <div class="item-left">${dateBadge}${tagHTML}<span>${item.name}</span></div>
+                <div class="item-left">${dateBadge}${tagHTML}<span>${escapeHTML(item.name)}</span></div>
                 <div>
                     <span style="font-weight:bold;color:${item.type === 'Income' ? '#2e7d32' : 'var(--pink-dark)'};">
                         ${item.type === 'Income' ? '+' : '-'}$${Number(item.amount).toLocaleString()}
@@ -2204,7 +2338,7 @@
                 <div class="item-left">
                     <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleDateTask('${task.id}', this, ${task.pts || 0.5})">
                     <span class="badge-tag badge-pts">+${task.pts || 0.5}點</span>
-                    <span>${task.text}</span>
+                    <span>${escapeHTML(task.text)}</span>
                 </div>
                 <button class="btn-del" onclick="deleteDateTask('${task.id}')">✕</button>
             `;
@@ -2534,7 +2668,7 @@
             li.innerHTML = `
                 <div class="item-left">
                     <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleWeeklyStudyBook('${item.id}', this)">
-                    <span class="badge-tag" style="background:var(--pink-primary); color:white;">${item.subject}</span>
+                    <span class="badge-tag" style="background:var(--pink-primary); color:white;">${escapeHTML(item.subject)}</span>
                     <span class="badge-tag" style="background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc;">第 ${item.bookNum} 本</span>
                     <span>當週排入進度：<b>${item.subject} 第 ${item.bookNum} 本</b></span>
                 </div>
@@ -2726,7 +2860,7 @@
                         <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleSlotTask('${p}', '${item.id}', this)">
                         ${tutorBadge}
                         ${item.time ? `<span class="badge-tag badge-time">⏰ ${item.time}</span>` : ''}
-                        <span>${item.text}</span>
+                        <span>${escapeHTML(item.text)}</span>
                     </div>
                     <button class="btn-del" onclick="deleteSlotTask('${p}', '${item.id}')">✕</button>
                 `;
@@ -2821,6 +2955,7 @@
             plan.sport.unshift({id:'sport-core', text:'練核心 10 分鐘', pts:0.2, checked:false, fixed:true});
         }
         if (!sportList.querySelector('[data-id="sport-core"]')) renderPlanItems(sportList, plan.sport, '運動');
+        updateDashboardOverview();
     }
 
     function renderPlanItems(list, items, tagText) {
@@ -2835,7 +2970,7 @@
                     ${tagText ? `<span class="badge-tag">${tagText}</span>` : ''}
                     <span class="badge-tag badge-pts">+${Number(item.pts||0.5)}點</span>
                     ${tagText === '讀書' && item.hours ? `<span class="badge-tag">${Number(item.hours)} 小時</span>` : ''}
-                    <span>${item.text}</span>
+                    <span>${escapeHTML(item.text)}</span>
                 </div>
                 ${item.fixed ? '' : `<button class="btn-del" onclick="deletePointTask(this)">✕</button>`}`;
             list.appendChild(li);
@@ -3139,7 +3274,6 @@
             localStorage.setItem('gigi_planner_date_tasks', JSON.stringify(dateTasks));
             saveFinanceData();
             saveSchedule();
-            localStorage.setItem('gigi_planner_password', AUG_PASSWORD);
 
             document.getElementById('save-status').innerText = '☁️ 正在同步到 Supabase...';
             await saveCloudData();
@@ -3234,6 +3368,37 @@
         const savedPassword = localStorage.getItem('gigi_planner_password');
         if (savedPassword) AUG_PASSWORD = savedPassword;
     }
+// V2.0 修正：快速跳轉採用明確的捲動控制，避免 sticky sidebar / overflow 容器攔截原生錨點。
+document.addEventListener('DOMContentLoaded', () => {
+    const quickNav = document.querySelector('.v2-nav');
+    if (!quickNav) return;
+    quickNav.addEventListener('click', (event) => {
+        const link = event.target.closest('a[href^="#"]');
+        if (!link || !quickNav.contains(link)) return;
+        const targetId = decodeURIComponent(link.getAttribute('href').slice(1));
+        const target = document.getElementById(targetId);
+        if (!target) return;
+        event.preventDefault();
+
+        const sidebar = target.closest('.sidebar');
+        const sidebarCanScroll = sidebar && window.getComputedStyle(sidebar).overflowY !== 'visible'
+            && sidebar.scrollHeight > sidebar.clientHeight;
+        if (sidebarCanScroll) {
+            const sidebarTop = sidebar.getBoundingClientRect().top;
+            const targetTop = target.getBoundingClientRect().top;
+            sidebar.scrollTo({ top: sidebar.scrollTop + targetTop - sidebarTop - 12, behavior: 'smooth' });
+        }
+
+        const navHeight = quickNav.getBoundingClientRect().height;
+        const targetTopOnPage = target.getBoundingClientRect().top + window.scrollY;
+        const offset = window.innerWidth <= 960 ? navHeight + 76 : 28;
+        window.scrollTo({ top: Math.max(0, targetTopOnPage - offset), behavior: 'smooth' });
+        history.replaceState(null, '', `#${encodeURIComponent(targetId)}`);
+        target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+    });
+});
+
 </script>
 
 </body>
