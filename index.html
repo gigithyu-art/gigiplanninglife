@@ -917,9 +917,21 @@
         }
         @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 
+
+        .points-card { cursor:pointer; transition:transform .18s, box-shadow .18s; }
+        .points-card:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(240,113,143,.22); }
+        .points-hint { font-size:.68rem; color:var(--pink-dark); margin-top:6px; opacity:.8; }
+        .points-ledger-list { max-height:55vh; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+        .points-ledger-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; background:var(--pink-soft); border:1px solid rgba(244,172,183,.3); }
+        .points-ledger-meta { min-width:0; font-size:.78rem; color:var(--text-sub); }
+        .points-ledger-reason { font-size:.88rem; font-weight:700; color:var(--text-main); overflow-wrap:anywhere; }
+        .points-ledger-delta { white-space:nowrap; font-weight:800; }
+        .points-ledger-delta.plus { color:#2e8b57; } .points-ledger-delta.minus { color:#d65b68; }
+
     </style>
 <!-- version 2026-11-08-weekly-carry-nav-direct-pills -->
 <!-- version 2026-11-08-quick-nav-after-week -->
+<!-- version 2026-11-08-points-ledger-modal -->
 <!-- version 2026-11-08-quick-nav-structural-fix -->
 <!-- version 2026-11-08-mobile-nav-inside-week -->
 </head>
@@ -1010,10 +1022,10 @@
             </div>
 
             <!-- 🌟 累積點數卡片 -->
-            <div class="points-card" id="points-section">
+            <div class="points-card" id="points-section" role="button" tabindex="0" onclick="openPointsLedger()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPointsLedger();}">
                 <div style="font-size:0.85rem; font-weight:bold; color:var(--pink-dark);">🌟 目前累積獎勵點數</div>
                 <div class="points-val" id="user-points-display">0.0</div>
-                <div style="font-size:0.72rem; color:var(--text-sub);">達成目標即可兌換願望禮物 🎁</div>
+                <div style="font-size:0.72rem; color:var(--text-sub);">達成目標即可兌換願望禮物 🎁</div><div class="points-hint">👆 點擊查看點數異動明細</div>
             </div>
 
         </div>
@@ -1489,6 +1501,15 @@
     </div>
 </div>
 
+
+<div class="modal-overlay" id="points-ledger-modal" onclick="if(event.target===this)closePointsLedger()">
+  <div class="modal-card" style="max-width:560px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div class="modal-title" style="margin:0;">📒 點數異動明細</div><button class="btn-secondary" onclick="closePointsLedger()">關閉</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0;padding:12px;background:#fff5f7;border-radius:12px;"><span style="font-size:.82rem;color:var(--text-sub);">目前累積點數</span><strong id="ledger-current-points" style="font-size:1.4rem;color:var(--pink-primary);">0.0</strong></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:.8rem;color:var(--text-sub);">依時間由新到舊排列</span><button class="btn-secondary" onclick="exportPointsLedger()">匯出明細</button></div>
+    <div id="points-ledger-list" class="points-ledger-list"></div>
+  </div>
+</div>
 <script>
     // Render untrusted/user-entered strings as text, never executable HTML.
     function escapeHTML(value) {
@@ -1503,6 +1524,7 @@
 
     const CLOUD_SYNC_KEYS = [
         'gigi_planner_points',
+        'gigi_planner_points_ledger',
         'gigi_planner_med_bonus',
         'gigi_planner_med_by_date',
         'gigi_planner_gym_bonus',
@@ -1877,6 +1899,7 @@
         else if (action === 'DEDUCT') totalPoints = parseFloat((Math.max(0, totalPoints - amountVal)).toFixed(1));
         else if (action === 'SET') totalPoints = parseFloat(amountVal.toFixed(1));
 
+        recordPointsChange(totalPoints-oldPoints, reason || '審核端人工調整', oldPoints, totalPoints);
         renderPointsUI();
         savePointsData();
         closeEditPointsModal();
@@ -1966,12 +1989,61 @@
         }
     }
 
-    function addPoints(pts) { totalPoints = parseFloat((totalPoints + pts).toFixed(1)); renderPointsUI(); savePointsData(); }
-    function deductPoints(pts) { totalPoints = parseFloat((totalPoints - pts).toFixed(1)); renderPointsUI(); savePointsData(); }
-    function renderPointsUI() { document.getElementById('user-points-display').innerText = totalPoints.toFixed(1); updateDashboardOverview(); }
+    let pointsLedger = [];
+    try { pointsLedger = JSON.parse(localStorage.getItem('gigi_planner_points_ledger') || '[]'); } catch(e) { pointsLedger = []; }
+    function inferPointsReason(kind) {
+        const stack = new Error().stack || '';
+        const rules = [
+            [/triggerAngerRecord/, '情緒稽核扣點'], [/redeemWishItem/, '願望禮物兌換'],
+            [/updateStudyScheduleReward/, '讀書範圍完成獎勵'], [/toggleSlotTask/, '每日行程完成獎勵'],
+            [/togglePointTask/, '任務完成／取消'], [/updateGymCount/, '健身房打卡獎勵'],
+            [/evaluateWakeTime/, '起床時間獎勵'], [/evaluateSleepTime/, '就寢時間獎勵'],
+            [/checkMedicationCompletion/, '服藥完成獎勵']
+        ];
+        for (const [re,label] of rules) if (re.test(stack)) return label;
+        return kind === 'add' ? '任務獎勵點數' : '點數扣除';
+    }
+    function recordPointsChange(delta, reason, before, after) {
+        if (!Number.isFinite(delta) || Math.abs(delta) < 0.0001) return;
+        pointsLedger.unshift({id:'pts-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),date:new Date().toISOString(),reason:String(reason||'點數異動'),delta:parseFloat(delta.toFixed(1)),balance:parseFloat(after.toFixed(1)),before:parseFloat(before.toFixed(1))});
+        if (pointsLedger.length > 2000) pointsLedger=pointsLedger.slice(0,2000);
+        localStorage.setItem('gigi_planner_points_ledger',JSON.stringify(pointsLedger));
+    }
+    function addPoints(pts, reason) {
+        const before=totalPoints; totalPoints=parseFloat((totalPoints+pts).toFixed(1));
+        recordPointsChange(totalPoints-before,reason||inferPointsReason('add'),before,totalPoints);
+        renderPointsUI(); savePointsData();
+    }
+    function deductPoints(pts, reason) {
+        const before=totalPoints; totalPoints=parseFloat((totalPoints-pts).toFixed(1));
+        recordPointsChange(totalPoints-before,reason||inferPointsReason('deduct'),before,totalPoints);
+        renderPointsUI(); savePointsData();
+    }
+    function renderPointsUI() { document.getElementById('user-points-display').innerText=totalPoints.toFixed(1); updateDashboardOverview(); }
+    function openPointsLedger() {
+        document.getElementById('ledger-current-points').innerText=totalPoints.toFixed(1)+' 點';
+        renderPointsLedger(); document.getElementById('points-ledger-modal').style.display='flex';
+    }
+    function closePointsLedger() { document.getElementById('points-ledger-modal').style.display='none'; }
+    function renderPointsLedger() {
+        const list=document.getElementById('points-ledger-list');
+        if (!pointsLedger.length) { list.innerHTML='<div style="text-align:center;padding:28px 10px;color:var(--text-sub);font-size:.85rem;">目前尚無異動明細。功能啟用後的新點數變動會開始記錄；既有總點數無法還原成過去逐筆紀錄。</div>'; return; }
+        list.innerHTML=pointsLedger.map(item=>{
+            const d=new Date(item.date), dateText=Number.isNaN(d.getTime())?'時間不明':d.toLocaleString('zh-TW',{hour12:false});
+            const delta=Number(item.delta)||0;
+            return `<div class="points-ledger-row"><div style="min-width:0;flex:1;"><div class="points-ledger-reason">${escapeHTML(item.reason)}</div><div class="points-ledger-meta">${escapeHTML(dateText)} · 異動後 ${Number(item.balance).toFixed(1)} 點</div></div><div class="points-ledger-delta ${delta>=0?'plus':'minus'}">${delta>0?'+':''}${delta.toFixed(1)}</div></div>`;
+        }).join('');
+    }
+    function exportPointsLedger() {
+        const rows=[['時間','異動原因','異動點數','異動後餘額'],...pointsLedger.map(x=>[new Date(x.date).toLocaleString('zh-TW'),x.reason,x.delta,x.balance])];
+        const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+        a.href=url;a.download='點數異動明細.csv';a.click();URL.revokeObjectURL(url);
+    }
 
     function savePointsData() {
         localStorage.setItem('gigi_planner_points', totalPoints);
+        localStorage.setItem('gigi_planner_points_ledger', JSON.stringify(pointsLedger));
         localStorage.setItem('gigi_planner_med_bonus', medBonusAwardedToday);
         localStorage.setItem('gigi_planner_med_by_date', JSON.stringify(medicationByDate));
         localStorage.setItem('gigi_planner_gym_bonus', gymBonusAwardedThisWeek);
