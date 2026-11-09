@@ -1578,36 +1578,47 @@
         }
     }
 
-    async function saveCloudData() {
-        const data = {};
-        CLOUD_SYNC_KEYS.forEach(key => {
-            const value = localStorage.getItem(key);
-            if (value !== null) data[key] = value;
+    // 將雲端寫入排隊，避免自動同步與手動「全部存檔」同時送出時，
+    // 較早開始、較晚完成的請求反而覆蓋最新讀書進度。
+    let cloudSaveQueue = Promise.resolve();
+
+    function saveCloudData() {
+        const saveTask = cloudSaveQueue.then(async () => {
+            // 在輪到本次寫入時才讀取 localStorage，確保拿到最新狀態。
+            const data = {};
+            CLOUD_SYNC_KEYS.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value !== null) data[key] = value;
+            });
+
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/gigi_planner_data?on_conflict=id`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_PUBLISHABLE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'resolution=merge-duplicates,return=minimal'
+                    },
+                    body: JSON.stringify({
+                        id: SUPABASE_ROW_ID,
+                        data: data,
+                        updated_at: new Date().toISOString()
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Cloud save failed: ${res.status} ${errorText}`);
+            }
+            return true;
         });
 
-        const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/gigi_planner_data?on_conflict=id`,
-            {
-                method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_PUBLISHABLE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'resolution=merge-duplicates,return=minimal'
-                },
-                body: JSON.stringify({
-                    id: SUPABASE_ROW_ID,
-                    data: data,
-                    updated_at: new Date().toISOString()
-                })
-            }
-        );
-
-        if (!res.ok) {
-            const errorText = await res.text();
-            throw new Error(`Cloud save failed: ${res.status} ${errorText}`);
-        }
-        return true;
+        // 前一次失敗不能讓整條佇列永久中斷；但仍把錯誤回傳給當次呼叫者。
+        cloudSaveQueue = saveTask.catch(() => false);
+        return saveTask;
     }
 
     let AUG_PASSWORD = localStorage.getItem('gigi_planner_password') || "aug123";
