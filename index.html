@@ -1136,9 +1136,7 @@
                     <div class="exam-subjects-grid" id="all-subjects-books-grid"></div>
                 </div>
 
-                <div style="font-size:0.82rem; font-weight:bold; color:var(--pink-dark); margin: 12px 0 6px 0;">➕ 排入當週讀書範圍：</div>
-                <div style="font-size:0.75rem; color:var(--text-sub); margin-bottom:8px;">直接點擊上方各科的範圍按鈕即可排入本週；再次點擊可標記完成。</div>
-                <ul class="item-list" id="weekly-study-list"></ul>
+                <div style="font-size:0.75rem; color:var(--text-sub); margin-top:8px;">點擊範圍按鈕即可切換狀態：原色＝未規劃、粉色＝已排入、完成色＝已讀完。</div>
             </div>
 
             <!-- 4. 🏃‍♀️ 運動計劃（讀書完成點數改由早午晚行程打卡） -->
@@ -2886,19 +2884,8 @@
         });
         if (groupScope.children.length > 0) select.appendChild(groupScope);
 
-        const studyList = getWeeklyStudyList(selectedDateStr);
-        if (studyList.length > 0) {
-            const group = document.createElement('optgroup');
-            group.label = '📖 當週排入之讀書本數';
-            studyList.forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = `${item.subject} 第${item.bookNum}本`;
-                opt.dataset.studyKey = `${item.subject}_b${item.bookNum}`;
-                opt.textContent = `${item.subject} 第${item.bookNum}本 ${item.checked ? ' (已讀完)' : ''}`;
-                group.appendChild(opt);
-            });
-            select.appendChild(group);
-        }
+        // 期末範圍已集中顯示在上方按鈕，不再另外列出當週讀書本數，
+        // 避免早午晚選單出現重複的科目／本數選項。
 
         const weekStart = getWeekStartStr(selectedDateStr);
         const groupTasks = document.createElement('optgroup');
