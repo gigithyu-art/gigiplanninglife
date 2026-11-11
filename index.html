@@ -2025,7 +2025,9 @@
         const stack = new Error().stack || '';
         const isSport = String(reason || '').includes('運動') ||
             /updateGymCount|resetGymCount/.test(stack);
-        return parseFloat((amount * (isSport ? 1 : 0.5)).toFixed(2));
+        const isPurchase = String(reason || '').includes('購物兌換') ||
+            /redeemWishItem|addFinanceItem|deleteFinanceItem/.test(stack);
+        return parseFloat((amount * (isSport || isPurchase ? 1 : 0.5)).toFixed(2));
     }
     function addPoints(pts, reason) {
         const adjustedPts = getAdjustedPointAmount(pts, reason);
@@ -2075,7 +2077,7 @@
         const price = parseFloat(document.getElementById('wish-price').value);
         const preview = document.getElementById('wish-pts-preview');
         if (!isNaN(price) && price > 0) {
-            const reqPts = (price / 200).toFixed(2);
+            const reqPts = (price / 100).toFixed(2);
             preview.innerText = `需要 ${reqPts} 點`;
             preview.style.display = 'inline-block';
         } else { preview.style.display = 'none'; }
@@ -2100,11 +2102,11 @@
     function redeemWishItem(id) {
         const item = wishlist.find(w => w.id === id);
         if (!item) return;
-        if (totalPoints < item.reqPoints / 2) return alert(`點數還不夠喔！還差 ${(item.reqPoints / 2 - totalPoints).toFixed(2)} 點！✨`);
+        if (totalPoints < item.reqPoints) return alert(`點數還不夠喔！還差 ${(item.reqPoints - totalPoints).toFixed(2)} 點！✨`);
 
         runWithAuth(() => {
-            if (confirm(`【兌換核准】確定要消耗 ${(item.reqPoints / 2).toFixed(2)} 點兌換「${item.name}」嗎？`)) {
-                deductPoints(item.reqPoints);
+            if (confirm(`【兌換核准】確定要消耗 ${(item.reqPoints).toFixed(2)} 點兌換「${item.name}」嗎？`)) {
+                deductPoints(item.reqPoints, '購物兌換：願望清單');
                 item.redeemed = true;
                 financeItems.push({
                     id: 'fin-' + Date.now(),
@@ -2132,10 +2134,10 @@
         wishlist.forEach(item => {
             const li = document.createElement('li');
             li.className = 'item' + (item.redeemed ? ' completed' : '');
-            const canAfford = totalPoints >= item.reqPoints / 2 && !item.redeemed;
+            const canAfford = totalPoints >= item.reqPoints && !item.redeemed;
             li.innerHTML = `
                 <div class="item-left">
-                    <span class="badge-tag badge-pts">需 ${(item.reqPoints / 2).toFixed(2)} 點</span>
+                    <span class="badge-tag badge-pts">需 ${(item.reqPoints).toFixed(2)} 點</span>
                     <span>${escapeHTML(item.name)} ($${Number(item.price).toLocaleString()})</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -2193,7 +2195,7 @@
         let deductedPts = 0;
         if (kind === 'Want') {
             deductedPts = parseFloat((amount / 100).toFixed(1));
-            deductPoints(deductedPts);
+            deductPoints(deductedPts, '購物兌換：想要支出');
             alert(`🛒 新增「想要」支出 $${amount}，已自動連動扣除 ${deductedPts} 點獎勵！`);
         }
 
@@ -2204,7 +2206,7 @@
 
     function deleteFinanceItem(id) {
         const item = financeItems.find(i => i.id === id);
-        if (item && item.deductedPts > 0) addPoints(item.deductedPts);
+        if (item && item.deductedPts > 0) addPoints(item.deductedPts, '購物兌換：取消想要支出');
         financeItems = financeItems.filter(item => item.id !== id);
         recalculateFinance(); saveFinanceData();
     }
