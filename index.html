@@ -1340,9 +1340,9 @@
 
     <!-- 💾 全頁儲存 -->
     <div class="save-all-wrap" style="padding: 12px 20px 18px;">
-        <button class="btn-pink save-all-btn" onclick="saveEverything()">💾 儲存全部變更</button>
+        <div style="text-align:center;font-size:.85rem;font-weight:600;color:var(--pink-dark);">☁️ 所有變更自動儲存</div>
         <div id="save-status" style="text-align:center; font-size:.72rem; color:var(--text-sub); margin-top:6px;">
-            尚未手動儲存
+            正在初始化自動儲存…
         </div>
         <div style="font-size:.7rem;color:var(--text-sub);text-align:center;margin-top:2px;">
             📱 期末進度已新增大體實與組織實範圍、各科完成率、總完成率與考試時間標記 (口解/口胚 12/18、組織/組織實/生理 12/21、胚胎/大體/大體實 12/22、OD 12/23)。
@@ -1544,7 +1544,12 @@
         'gigi_planner_study_rewarded_keys'
     ];
 
+    const CLOUD_PENDING_KEY = 'gigi_planner_unsynced_changes';
     async function loadCloudData() {
+        if (localStorage.getItem(CLOUD_PENDING_KEY) === '1') {
+            console.warn('尚有未同步的本機變更，略過舊雲端快照以避免覆蓋進度');
+            return false;
+        }
         try {
             const res = await fetch(
                 `${SUPABASE_URL}/rest/v1/gigi_planner_data?id=eq.${encodeURIComponent(SUPABASE_ROW_ID)}&select=data,updated_at`,
@@ -1576,7 +1581,7 @@
         }
     }
 
-    // 將雲端寫入排隊，避免自動同步與手動「全部存檔」同時送出時，
+    // 將雲端寫入排隊，避免連續自動同步時，
     // 較早開始、較晚完成的請求反而覆蓋最新讀書進度。
     let cloudSaveQueue = Promise.resolve();
 
@@ -1739,17 +1744,22 @@
     function scheduleCloudSync() {
         if (!cloudSyncReady) return;
         clearTimeout(cloudSyncTimer);
+        localStorage.setItem(CLOUD_PENDING_KEY, '1');
+        if (cloudSyncInFlight) cloudSyncAgain = true;
         setSaveStatus('⏳ 已儲存於本機，準備同步雲端…');
         cloudSyncTimer = setTimeout(runAutoCloudSync, 900);
     }
 
     async function runAutoCloudSync() {
+        cloudSyncTimer = null;
         if (!navigator.onLine) { setSaveStatus('⚠️ 目前離線；資料已保留在本機'); return; }
         if (cloudSyncInFlight) { cloudSyncAgain = true; return; }
         cloudSyncInFlight = true;
         setSaveStatus('☁️ 正在自動同步…');
         try {
             await saveCloudData();
+            // 只有同步期間沒有新的修改，才可清除待同步標記。
+            if (!cloudSyncAgain && !cloudSyncTimer) localStorage.removeItem(CLOUD_PENDING_KEY);
             setSaveStatus(`✓ 雲端已同步 · ${new Date().toLocaleTimeString('zh-TW',{hour12:false})}`);
         } catch (err) {
             console.error('自動雲端同步失敗：', err);
@@ -1769,6 +1779,15 @@
         };
         cloudSyncReady = true;
         window.addEventListener('online', scheduleCloudSync);
+        if (localStorage.getItem(CLOUD_PENDING_KEY) === '1') scheduleCloudSync();
+        window.addEventListener('pagehide', () => {
+            if (cloudSyncTimer) {
+                clearTimeout(cloudSyncTimer);
+                cloudSyncTimer = null;
+                // sendBeacon cannot attach the required Supabase auth headers;
+                // leave pending flag for next visit rather than claiming success.
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -3506,35 +3525,6 @@
         courses = courses.filter(c => c.id !== editingCourseId);
         saveSchedule();
         closeCourseModal();
-    }
-
-    async function saveEverything() {
-        try {
-            saveAllLists();
-            saveHabits();
-            saveDailyPlans();
-            saveWeeklyStudyPlans();
-            saveTimeSlots();
-            saveSubjectPillStates();
-            saveGymData();
-            localStorage.setItem('gigi_planner_course_attendance', JSON.stringify(courseAttendance));
-            savePointsData();
-            saveWishlistData();
-            localStorage.setItem('gigi_planner_date_tasks', JSON.stringify(dateTasks));
-            saveFinanceData();
-            saveSchedule();
-
-            document.getElementById('save-status').innerText = '☁️ 正在同步到 Supabase...';
-            await saveCloudData();
-
-            const now = new Date();
-            document.getElementById('save-status').innerText = `✅ 已同步全部變更 · ${now.toLocaleString('zh-TW', {hour12:false})}`;
-            alert('✅ 所有變更已儲存，並同步到 Supabase！');
-        } catch (err) {
-            console.error(err);
-            document.getElementById('save-status').innerText = '❌ 雲端同步失敗';
-            alert('❌ 雲端同步失敗。');
-        }
     }
 
     function saveAllLists() {
